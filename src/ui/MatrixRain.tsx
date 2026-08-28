@@ -141,8 +141,10 @@ export function MatrixRain({ z }: { z: number }) {
       fitted = true
       lastDensity = density
       const w = canvas.width
-      colW = Math.max(12, w / 28)
-      lineH = (colW * 1.15) / density
+      // Density has to ride colW: the column count is width / colW, and lineH follows
+      // it so the glyph cell stays square-ish. Shrinking only lineH thins the grid out.
+      colW = Math.max(12, w / 28) / density
+      lineH = colW * 1.15
       colsRef.current = buildColumns(w, canvas.height, colW, density)
     }
 

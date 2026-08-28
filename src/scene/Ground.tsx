@@ -6,6 +6,7 @@ import { GRID_GLOW, GRID_Z_END, GRID_Z_FADE, GRID_Z_START } from '../content/deb
 import { zWindowFade } from '../content/zMap.ts'
 import { getSmoothedScrollProgress } from '../hooks/useScrollProgress.ts'
 import { gridYaw, setFloorPivotAtScreenBottom } from './gridTransform.ts'
+import { GRID_GLOW_LINE_GLSL } from './gridGlow.ts'
 import { fadeRange, HORIZON_FADE_GLSL } from './horizonFade.ts'
 import { COLORS, paletteHues } from './materials.ts'
 
@@ -33,18 +34,7 @@ const GRID_FRAG = /* glsl */ `
   varying vec3 vWorldPos;
 
   ${HORIZON_FADE_GLSL}
-
-  float glowLine(float coord, float size, float coreWidth, float haloWidth) {
-    float d = abs(fract(coord / size - 0.5) - 0.5) * size;
-    float fw = fwidth(coord);
-    float glow = max(uGlow, 0.05);
-    float lod = 1.0 - smoothstep(size * 0.1, size * 0.42, fw);
-    float haloKeep = 1.0 - smoothstep(size * 0.03, size * 0.18, fw);
-    float haloW = mix(haloWidth * 0.12, haloWidth, haloKeep) * glow;
-    float core = exp(-pow(d / max(coreWidth * glow + fw * 0.3, 1e-5), 2.0));
-    float halo = exp(-pow(d / max(haloW + fw * 0.5, 1e-5), 2.0));
-    return max(core, halo * 0.38 * haloKeep) * lod;
-  }
+  ${GRID_GLOW_LINE_GLSL}
 
   void main() {
     float c = cos(uYaw);

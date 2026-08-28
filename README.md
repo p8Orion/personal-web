@@ -86,6 +86,20 @@ Un rayo desde el infinito hacia 0 **no** garantiza un borde interesante: en el s
 
 `src/ui/MatrixRain.tsx`. Columnas de glifos haciendo scroll **hacia arriba**, color SC_1. Visible entre `MATRIX_Z_START` y `MATRIX_Z_END`, con fade en Z (`MATRIX_Z_FADE`), fade espacial (`MATRIX_EDGE_FADE`, en mobile solo abajo), opacidad `MATRIX_ALPHA` y velocidad `MATRIX_SPEED`.
 
+## Analytics (Umami)
+
+Umami Cloud (Hobby, gratis). Snippet en `index.html`. Eventos custom en `src/analytics.ts`. Dashboard: [cloud.umami.is](https://cloud.umami.is).
+
+Cada visita manda el pageview automático del script. Encima:
+
+| Evento | Cuándo | Propiedades |
+| --- | --- | --- |
+| **`image`** | Clic en una foto de un scroll panel | `file` (nombre del archivo), `section` (`intro`, `projects`, …) |
+| **`contact`** | Clic en una fila de contacto | `target` (`linkedin`, `github`, `twitter`, `email`) |
+| **`scroll-0.2`** … **`scroll-1.0`** | Al cruzar cada 0.2 de Z, una vez por visita | — |
+
+Si la página abre a mitad de scroll (hash), se mandan todos los umbrales ya superados. Código: `track()` / `useBindUmami()` en `src/analytics.ts`; disparos en `SectionCopy.tsx` (fotos) y `ContactList.tsx` (contacto).
+
 ## Debug (`src/content/debug.ts`)
 
 | Knob | Rol |

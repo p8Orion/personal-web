@@ -5,7 +5,7 @@ export const contact = {
   eyebrow: '04 | Galumphing...',
   title: "Let's get in touch!",
   subtitle: '',
-  text: 'My cats say hi!',
+  text: 'I’d love to hear about you and what you’re working on. My cats say hi!',
   pics: [
     { src: new URL('./images/2-a.jpg', import.meta.url).href, fit: 'horizontal' },
     { src: new URL('./images/2-b.jpg', import.meta.url).href, fit: 'horizontal' },

@@ -240,15 +240,16 @@ function CardBody({
   const shots = pics.filter((pic) => filled(pic.src))
   const wide = shots.filter((pic) => pic.fit === 'horizontal')
   const tall = shots.filter((pic) => pic.fit === 'vertical')
-  const hasMain = filled(title) || filled(subtitle) || filled(text) || Boolean(children)
+  const hasMain = filled(subtitle) || filled(text) || Boolean(children)
 
   return (
     <>
       {filled(eyebrow) ? <p className="eyebrow">{eyebrow}</p> : null}
+      {/* Outside the split: the title gets the full width and the tall pic starts below it. */}
+      {filled(title) ? <Heading className="panel__title">{title}</Heading> : null}
       {hasMain || tall.length > 0 ? (
         <div className={tall.length > 0 ? 'panel__body panel__body--split' : 'panel__body'}>
           <div className="panel__main">
-            {filled(title) ? <Heading>{title}</Heading> : null}
             {filled(subtitle) ? <p className="lede">{subtitle}</p> : null}
             {children}
             {filled(text) ? <p className="copy">{text}</p> : null}

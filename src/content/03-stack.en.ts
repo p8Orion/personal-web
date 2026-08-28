@@ -12,7 +12,7 @@ export const stack = {
     { icon: 'angular', name: 'Angular' },
     { icon: 'node', name: 'Node.js' },
     { icon: 'payments', name: 'Payment integrations' },
-    { icon: 'ai', name: 'AI / LLM' },
+    { icon: 'ai', name: 'AI / LLMs' },
     { icon: 'linux', name: 'Linux' },
     { icon: 'docker', name: 'Docker' },
     { icon: 'vmware', name: 'VMware vSphere / ESXi' },

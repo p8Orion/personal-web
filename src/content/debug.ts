@@ -7,7 +7,7 @@ export const DEBUG_PALETTE = false
 export const DEBUG_STAGE_CUBE = false
 
 /** Building clusters on the grid. */
-export const DEBUG_BUILDINGS = false
+export const DEBUG_BUILDINGS = true
 
 /**
  * Z windows. Inclusive ranges where each layer is on stage.
@@ -29,7 +29,7 @@ export const NEBULA_Z_END = 1
 export const PRIMARY_HUE_AT_Z0 = 330 / 360
 
 /** Peak opacity. 1 = solid. */
-export const FRACTAL_ALPHA = 0.55
+export const FRACTAL_ALPHA = 0.6
 
 /** Zoom pace across the fractal window. 1 = uses the whole window. */
 export const FRACTAL_ZOOM_SPEED = 1
@@ -68,10 +68,10 @@ export const MATRIX_EDGE_FADE = 0.16
 export const MATRIX_HUE_SPAN = 1
 
 /** Desktop glyph-row density. 1 = same as mobile; 2 = twice as many rows. */
-export const MATRIX_DENSITY_DESKTOP = 3
+export const MATRIX_DENSITY_DESKTOP = 4
 
 /** Peak opacity. 1 = solid. */
-export const NEBULA_ALPHA = 0.7
+export const NEBULA_ALPHA = 0.8
 
 /** CCW turns across the nebula window. Negative = clockwise. */
 export const NEBULA_SPIN = 0.4
@@ -83,7 +83,7 @@ export const NEBULA_PIVOT_X = 0
 export const NEBULA_PIVOT_Y = 0.5
 
 /** Orbit radius in viewport widths, pole → photo center. */
-export const NEBULA_RADIUS = 0.5
+export const NEBULA_RADIUS = 1
 
 /** Photo zoom. 1 = covers the Z-panel. */
 export const NEBULA_ZOOM = 2
@@ -107,7 +107,7 @@ export const NEBULA_STAR_COUNT = 180
 export const NEBULA_TWINKLE = 1
 
 /** Page length in viewports: SECTIONS.length / this. Grid and camera follow. */
-export const SCROLL_SPEED = 1 / 3
+export const SCROLL_SPEED = 1 / 2
 
 /** Cards fly in/out within CARD_Z. 0 = cut (no travel). */
 export const SCROLL_STICK = 1
@@ -116,7 +116,7 @@ export const SCROLL_STICK = 1
 export const SCROLL_TRAVEL = 1
 
 /** Scale at belt edges. 1 = no shrink. Center is always 1. */
-export const SCROLL_BELT_SCALE = 0.85
+export const SCROLL_BELT_SCALE = 0.8
 
 /** rotateX at belt edges, degrees. Far edge leans away. */
 export const SCROLL_BELT_TILT = 10

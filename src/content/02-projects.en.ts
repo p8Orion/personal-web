@@ -3,7 +3,7 @@ import type { ProjectsCopy } from './types.ts'
 /** 02 PROJECTS — english */
 export const projects = {
   eyebrow: '02 | Discombobulating...',
-  title: 'What I’ve tinkered with',
+  title: 'My experiments',
   subtitle: '',
   text: '',
   pics: [
@@ -32,6 +32,14 @@ export const projects = {
     {
       id: 'supply-chain',
       title: '> A 3D world for a geopolitical game, with supply and production chains',
+      summary: '',
+      tags: [],
+      href: '',
+      year: '',
+    },
+    {
+      id: 'dip',
+      title: '> A mod of JDip where LLMs with different personalities play each other ',
       summary: '',
       tags: [],
       href: '',

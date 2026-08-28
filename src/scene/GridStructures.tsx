@@ -1,31 +1,27 @@
-import { RoundedBox, shaderMaterial } from '@react-three/drei'
+import { shaderMaterial } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'
-import {
-  Color,
-  RepeatWrapping,
-  ShaderMaterial,
-  type Mesh,
-  Vector3,
-} from 'three'
-import { GRID_Z_END, GRID_Z_FADE, GRID_Z_START } from '../content/debug.ts'
+import { BoxGeometry, Color, ShaderMaterial, type Mesh, Vector3 } from 'three'
+import { GRID_GLOW, GRID_Z_END, GRID_Z_FADE, GRID_Z_START } from '../content/debug.ts'
 import { zWindowFade } from '../content/zMap.ts'
 import { getSmoothedScrollProgress } from '../hooks/useScrollProgress.ts'
-import { GRID_CELL, snapToGrid } from './gridTransform.ts'
+import { GRID_GLOW_LINE_GLSL } from './gridGlow.ts'
+import { GRID_CELL, gridYaw } from './gridTransform.ts'
 import { useGridWorld } from './GridWorld.tsx'
 import { fadeRange, HORIZON_FADE_GLSL } from './horizonFade.ts'
-import { createCodeTexture, paletteHues } from './materials.ts'
+import { COLORS, paletteHues } from './materials.ts'
 
 const DEG = Math.PI / 180
 const GROUPS = 12
 const RADIUS = 10
 const CLUSTER_MIN = 5
 const CLUSTER_MAX = 10
+const FOOTPRINT = GRID_CELL
+const HEIGHTS = [0.5, 1, 1.5, 2] as const
 
 type Structure = {
   rest: Vector3
-  size: [number, number, number]
-  radius: number
+  height: number
 }
 
 function hash01(n: number): number {
@@ -33,11 +29,8 @@ function hash01(n: number): number {
   return x - Math.floor(x)
 }
 
-function cubitoSize(seed: number): [number, number, number] {
-  const width = 0.12 + Math.pow(hash01(seed), 1.25) * 0.78
-  const depth = 0.12 + Math.pow(hash01(seed + 2.7), 1.25) * 0.78
-  const height = 0.1 + Math.pow(hash01(seed + 4.2), 0.8) * 1.2
-  return [width, height, depth]
+function snapToCellCenter(value: number): number {
+  return Math.floor(value / FOOTPRINT) * FOOTPRINT + FOOTPRINT / 2
 }
 
 function rotateOffset(x: number, z: number, rot: number): [number, number] {
@@ -74,12 +67,15 @@ function spiralCells(count: number): [number, number][] {
 }
 
 function clusterOffsets(seed: number, count: number): [number, number][] {
-  const step = GRID_CELL * 3
   const rot = Math.floor(hash01(seed + 2.4) * 4)
   return spiralCells(count).map(([x, z]) => {
-    const [rx, rz] = rotateOffset(x * step, z * step, rot)
+    const [rx, rz] = rotateOffset(x * FOOTPRINT, z * FOOTPRINT, rot)
     return [rx, rz]
   })
+}
+
+function pickHeight(seed: number): number {
+  return HEIGHTS[Math.floor(hash01(seed) * HEIGHTS.length)] * FOOTPRINT
 }
 
 function buildStructures(): Structure[] {
@@ -87,21 +83,20 @@ function buildStructures(): Structure[] {
   for (let i = 0; i < GROUPS; i += 1) {
     const jitter = (hash01(i) * 2 - 1) * 3 * DEG
     const angle = i * 30 * DEG + jitter
-    const originX = snapToGrid(Math.cos(angle) * RADIUS)
-    const originZ = snapToGrid(Math.sin(angle) * RADIUS)
+    const originX = snapToCellCenter(Math.cos(angle) * RADIUS)
+    const originZ = snapToCellCenter(Math.sin(angle) * RADIUS)
     const count =
       CLUSTER_MIN + Math.floor(hash01(i * 3.17) * (CLUSTER_MAX - CLUSTER_MIN + 1))
     const offsets = clusterOffsets(i, count)
     for (let k = 0; k < count; k += 1) {
-      const size = cubitoSize(i * 11.3 + k * 7.1)
+      const height = pickHeight(i * 11.3 + k * 7.1)
       list.push({
         rest: new Vector3(
-          snapToGrid(originX + offsets[k][0]),
-          size[1] / 2,
-          snapToGrid(originZ + offsets[k][1]),
+          snapToCellCenter(originX + offsets[k][0]),
+          height / 2,
+          snapToCellCenter(originZ + offsets[k][1]),
         ),
-        size,
-        radius: Math.min(size[0], size[1], size[2]) * 0.12,
+        height,
       })
     }
   }
@@ -109,130 +104,146 @@ function buildStructures(): Structure[] {
 }
 
 const STRUCTURES = buildStructures()
+const UNIT_BOX = new BoxGeometry(1, 1, 1)
 
-const CODE_VERT = /* glsl */ `
+const EDGE_VERT = /* glsl */ `
   varying vec3 vWorldPos;
   varying vec3 vLocalPos;
-  varying vec3 vLocalNormal;
-  varying vec3 vWorldNormal;
+  varying vec3 vHalfSize;
 
   void main() {
-    vLocalPos = position;
-    vLocalNormal = normal;
-    vWorldNormal = normalize(mat3(modelMatrix) * normal);
+    vec3 scale = vec3(
+      length(vec3(modelMatrix[0][0], modelMatrix[0][1], modelMatrix[0][2])),
+      length(vec3(modelMatrix[1][0], modelMatrix[1][1], modelMatrix[1][2])),
+      length(vec3(modelMatrix[2][0], modelMatrix[2][1], modelMatrix[2][2]))
+    );
+    vHalfSize = scale * 0.5;
+    vLocalPos = position * scale;
     vec4 world = modelMatrix * vec4(position, 1.0);
     vWorldPos = world.xyz;
     gl_Position = projectionMatrix * viewMatrix * world;
   }
 `
 
-const CODE_FRAG = /* glsl */ `
-  uniform sampler2D uMap;
-  uniform vec3 uTint;
+const EDGE_FRAG = /* glsl */ `
+  uniform vec3 uPRIMARIO;
+  uniform vec3 uFill;
   uniform vec3 uCamPos;
+  uniform vec3 uPivot;
+  uniform float uCell;
+  uniform float uMajor;
   uniform float uFadeStart;
   uniform float uFadeEnd;
-  uniform float uScale;
+  uniform float uYaw;
+  uniform float uGlow;
   uniform float uZFade;
   varying vec3 vWorldPos;
   varying vec3 vLocalPos;
-  varying vec3 vLocalNormal;
-  varying vec3 vWorldNormal;
+  varying vec3 vHalfSize;
 
   ${HORIZON_FADE_GLSL}
-
-  vec3 sampleCode(vec3 pos, vec3 nor) {
-    vec3 blend = pow(abs(normalize(nor)), vec3(4.0));
-    blend /= max(blend.x + blend.y + blend.z, 1e-5);
-    vec3 p = pos * uScale;
-    vec3 cx = texture2D(uMap, p.yz).rgb;
-    vec3 cy = texture2D(uMap, p.xz).rgb;
-    vec3 cz = texture2D(uMap, p.xy).rgb;
-    return cx * blend.x + cy * blend.y + cz * blend.z;
-  }
+  ${GRID_GLOW_LINE_GLSL}
 
   void main() {
-    vec3 code = sampleCode(vLocalPos, vLocalNormal);
-    float luma = max(code.g, max(code.r, code.b));
-    float glyph = smoothstep(0.06, 0.42, luma);
-    vec3 N = normalize(vWorldNormal);
-    vec3 V = normalize(uCamPos - vWorldPos);
-    float ndotv = abs(dot(N, V));
-    float fresnel = pow(1.0 - ndotv, 2.4);
-    float wrap = 0.58 + 0.42 * max(dot(N, vec3(0.22, 0.9, 0.28)), 0.0);
-    vec3 chassis = uTint * 0.22;
-    vec3 ink = uTint * 1.08;
-    vec3 albedo = mix(chassis, ink, glyph) * wrap + uTint * fresnel * 0.12;
-    float fade = gridMajorFade(vWorldPos, uCamPos, uFadeStart, uFadeEnd) * uZFade;
-    gl_FragColor = vec4(albedo * fade, 1.0);
+    float c = cos(uYaw);
+    float s = sin(uYaw);
+    vec2 p = vWorldPos.xz - uPivot.xz;
+    vec2 g = vec2(c * p.x - s * p.y, s * p.x + c * p.y);
+
+    vec3 dFace = max(vHalfSize - abs(vLocalPos), 0.0);
+    float yDist = min(dFace.x, dFace.z) < dFace.y
+      ? min(abs(vLocalPos.y + vHalfSize.y), abs(vLocalPos.y - vHalfSize.y))
+      : 1e5;
+    float yFw = fwidth(vLocalPos.y);
+
+    float thin;
+    float major;
+    if (dFace.y <= dFace.x && dFace.y <= dFace.z) {
+      thin = max(glowLine(g.x, uCell, 0.012, 0.042), glowLine(g.y, uCell, 0.012, 0.042));
+      major = max(glowLine(g.x, uMajor, 0.028, 0.09), glowLine(g.y, uMajor, 0.028, 0.09));
+    } else if (dFace.x <= dFace.z) {
+      thin = max(glowLine(g.y, uCell, 0.012, 0.042), glowLineFalloff(yDist, yFw, uCell, 0.012, 0.042));
+      major = glowLine(g.y, uMajor, 0.028, 0.09);
+    } else {
+      thin = max(glowLine(g.x, uCell, 0.012, 0.042), glowLineFalloff(yDist, yFw, uCell, 0.012, 0.042));
+      major = glowLine(g.x, uMajor, 0.028, 0.09);
+    }
+
+    float dist = gridPlanarDist(vWorldPos, uCamPos);
+    float horizon = gridHorizon(vWorldPos, uCamPos);
+    float thinFade = (1.0 - smoothstep(uFadeStart * 0.32, uFadeEnd * 0.52, dist)) * horizon;
+    float majorFade = (1.0 - smoothstep(uFadeStart * 0.65, uFadeEnd, dist)) * horizon;
+    float grid = max(thin * 0.72 * thinFade, major * majorFade);
+    vec3 lit = mix(uFill, uPRIMARIO, grid);
+    gl_FragColor = vec4(mix(uFill, lit, uZFade), 1.0);
   }
 `
 
-const CodeMaterial = shaderMaterial(
+const EdgeMaterial = shaderMaterial(
   {
-    uMap: null,
-    uTint: new Color('#7cffb2'),
+    uPRIMARIO: new Color(COLORS.phosphor),
+    uFill: new Color(COLORS.bg),
     uCamPos: new Vector3(),
+    uPivot: new Vector3(),
+    uCell: 0.2,
+    uMajor: 1,
     uFadeStart: 24,
     uFadeEnd: 88,
-    uScale: 1.85,
+    uYaw: 0,
+    uGlow: 1,
     uZFade: 1,
   },
-  CODE_VERT,
-  CODE_FRAG,
+  EDGE_VERT,
+  EDGE_FRAG,
 )
 
-type CodeMaterialInstance = ShaderMaterial & {
-  uMap: ReturnType<typeof createCodeTexture> | null
-  uTint: Color
+type EdgeMaterialInstance = ShaderMaterial & {
+  uPRIMARIO: Color
+  uFill: Color
   uCamPos: Vector3
+  uPivot: Vector3
+  uCell: number
+  uMajor: number
   uFadeStart: number
   uFadeEnd: number
-  uScale: number
+  uYaw: number
+  uGlow: number
   uZFade: number
-}
-
-function makeCodeMaterial(map: ReturnType<typeof createCodeTexture>): CodeMaterialInstance {
-  const mat = new CodeMaterial() as CodeMaterialInstance
-  mat.uMap = map
-  mat.toneMapped = false
-  mat.fog = false
-  return mat
 }
 
 export function GridStructures({ skipFx }: { skipFx: boolean }) {
   const { pivot } = useGridWorld()
   const meshes = useRef<(Mesh | null)[]>([])
-  const smoothness = skipFx ? 2 : 4
 
-  const codeTexture = useMemo(() => {
-    const texture = createCodeTexture()
-    texture.wrapS = RepeatWrapping
-    texture.wrapT = RepeatWrapping
-    return texture
+  const material = useMemo(() => {
+    const mat = new EdgeMaterial() as EdgeMaterialInstance
+    mat.toneMapped = false
+    mat.fog = false
+    mat.transparent = false
+    mat.depthWrite = true
+    return mat
   }, [])
 
-  const material = useMemo(() => makeCodeMaterial(codeTexture), [codeTexture])
-
   useEffect(() => {
-    return () => {
-      material.dispose()
-      codeTexture.dispose()
-    }
-  }, [codeTexture, material])
+    return () => material.dispose()
+  }, [material])
 
   useEffect(() => {
     const fade = fadeRange(skipFx)
+    material.uCell = skipFx ? 0.27 : GRID_CELL
+    material.uMajor = skipFx ? 1.35 : 1
     material.uFadeStart = fade.start
     material.uFadeEnd = fade.end
   }, [material, skipFx])
 
   useFrame(({ camera }) => {
     const scroll = getSmoothedScrollProgress()
-    const hues = paletteHues(scroll)
     material.uCamPos.copy(camera.position)
-    material.uTint.setHSL(hues.PRIMARIO, 0.82, 0.55)
+    material.uPivot.copy(pivot)
+    material.uYaw = gridYaw(scroll)
+    material.uGlow = GRID_GLOW
     material.uZFade = zWindowFade(scroll, GRID_Z_START, GRID_Z_END, GRID_Z_FADE)
+    material.uPRIMARIO.setHSL(paletteHues(scroll).PRIMARIO, 0.78, 0.52)
 
     for (let i = 0; i < STRUCTURES.length; i += 1) {
       const item = STRUCTURES[i]
@@ -245,16 +256,14 @@ export function GridStructures({ skipFx }: { skipFx: boolean }) {
   return (
     <group>
       {STRUCTURES.map((item, index) => (
-        <RoundedBox
-          args={item.size}
-          bevelSegments={skipFx ? 1 : 2}
+        <mesh
+          geometry={UNIT_BOX}
           key={index}
           material={material}
-          radius={item.radius}
           ref={(node) => {
             meshes.current[index] = node
           }}
-          smoothness={smoothness}
+          scale={[FOOTPRINT, item.height, FOOTPRINT]}
         />
       ))}
     </group>
