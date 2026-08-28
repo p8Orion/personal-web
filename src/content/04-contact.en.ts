@@ -1,3 +1,4 @@
+import { pic } from './pic.ts'
 import type { ContactCopy } from './types.ts'
 
 /** 04 CONTACT — english. URLs live in identity.ts */
@@ -7,10 +8,10 @@ export const contact = {
   subtitle: '',
   text: 'I’d love to hear about you and what you’re working on. My cats say hi!',
   pics: [
-    { src: new URL('./images/2-a.jpg', import.meta.url).href, fit: 'horizontal' },
-    { src: new URL('./images/2-b.jpg', import.meta.url).href, fit: 'horizontal' },
-    { src: new URL('./images/2-c.jpg', import.meta.url).href, fit: 'horizontal' },
-    { src: new URL('./images/2-d.jpg', import.meta.url).href, fit: 'horizontal' },
+    { src: pic('2-a.webp'), fit: 'horizontal' },
+    { src: pic('2-b.webp'), fit: 'horizontal' },
+    { src: pic('2-c.webp'), fit: 'horizontal' },
+    { src: pic('2-d.webp'), fit: 'horizontal' },
   ],
   items: [
     { icon: 'linkedin', name: 'LinkedIn', social: 'linkedin' },

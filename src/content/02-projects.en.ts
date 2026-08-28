@@ -1,3 +1,4 @@
+import { pic } from './pic.ts'
 import type { ProjectsCopy } from './types.ts'
 
 /** 02 PROJECTS — english */
@@ -7,10 +8,10 @@ export const projects = {
   subtitle: '',
   text: '',
   pics: [
-    { src: new URL('./images/4-a.jpg', import.meta.url).href, fit: 'horizontal' },
-    { src: new URL('./images/4-b.png', import.meta.url).href, fit: 'horizontal' },
-    { src: new URL('./images/4-c.jpeg', import.meta.url).href, fit: 'horizontal' },
-    { src: new URL('./images/4-d.png', import.meta.url).href, fit: 'horizontal' },
+    { src: pic('4-a.webp'), fit: 'horizontal' },
+    { src: pic('4-b.webp'), fit: 'horizontal' },
+    { src: pic('4-c.webp'), fit: 'horizontal' },
+    { src: pic('4-d.webp'), fit: 'horizontal' },
   ],
   items: [
     {

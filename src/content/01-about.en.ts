@@ -1,3 +1,4 @@
+import { pic } from './pic.ts'
 import type { CardCopy } from './types.ts'
 
 /** 01 ABOUT — english */
@@ -7,9 +8,9 @@ export const about = {
   subtitle: '',
   //text: 'Tota (the pig), Totito, Orange and Maillo',
   pics: [
-    { src: new URL('./images/2-a.jpg', import.meta.url).href, fit: 'horizontal' },
-    { src: new URL('./images/2-b.jpg', import.meta.url).href, fit: 'horizontal' },
-    { src: new URL('./images/2-c.jpg', import.meta.url).href, fit: 'horizontal' },
-    { src: new URL('./images/2-d.jpg', import.meta.url).href, fit: 'horizontal' },
+    { src: pic('2-a.webp'), fit: 'horizontal' },
+    { src: pic('2-b.webp'), fit: 'horizontal' },
+    { src: pic('2-c.webp'), fit: 'horizontal' },
+    { src: pic('2-d.webp'), fit: 'horizontal' },
   ],
 } satisfies CardCopy

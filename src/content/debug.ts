@@ -23,7 +23,7 @@ export const MATRIX_Z_START = 0.4
 export const MATRIX_Z_END = 0.8
 
 export const NEBULA_Z_START = 0.75
-export const NEBULA_Z_END = 1
+export const NEBULA_Z_END = 1.05
 
 /** PRIMARIO hue at Z = 0, in turns. Walks one full turn as Z goes 0 → 1. */
 export const PRIMARY_HUE_AT_Z0 = 330 / 360
@@ -102,6 +102,9 @@ export const NEBULA_HUE_SPAN = 1
 
 /** Field stars. 0 = nebula only. */
 export const NEBULA_STAR_COUNT = 180
+
+/** Desktop star size vs mobile. 1 = same; 0.2 = five times smaller. */
+export const NEBULA_STAR_SCALE_DESKTOP = 0.2
 
 /** Twinkle speed. 2 = twice as fast. */
 export const NEBULA_TWINKLE = 1

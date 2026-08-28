@@ -9,17 +9,19 @@ import {
   NEBULA_SOFT_EDGE,
   NEBULA_SPIN,
   NEBULA_STAR_COUNT,
+  NEBULA_STAR_SCALE_DESKTOP,
   NEBULA_TWINKLE,
   NEBULA_Z_END,
   NEBULA_Z_FADE,
   NEBULA_Z_START,
   NEBULA_ZOOM,
 } from '../content/debug.ts'
+import { pic } from '../content/pic.ts'
 import { zWindowFade } from '../content/zMap.ts'
 import { hueToRgb, paletteHues } from '../scene/materials.ts'
 import { fitOverlayCanvas } from './fitOverlayCanvas.ts'
 
-const NEBULA_SRC = new URL('../content/images/OrionNebula.jpg', import.meta.url).href
+const NEBULA_SRC = pic('OrionNebula.webp')
 
 type Star = {
   x: number
@@ -175,7 +177,7 @@ function drawStar(
   tw: number,
   rgb: [number, number, number],
 ): void {
-  const r = Math.max(0.4, star.size * scale)
+  const r = Math.max(0.12, star.size * scale)
   const [cr, cg, cb] = rgb
   ctx.fillStyle = `rgba(${Math.round(cr * 255)}, ${Math.round(cg * 255)}, ${Math.round(cb * 255)}, ${tw})`
   ctx.beginPath()
@@ -183,7 +185,7 @@ function drawStar(
   ctx.fill()
   if (!star.spike) return
   ctx.strokeStyle = ctx.fillStyle
-  ctx.lineWidth = Math.max(0.5, r * 0.22)
+  ctx.lineWidth = Math.max(0.15, r * 0.22)
   const s = r * 3.4
   ctx.beginPath()
   ctx.moveTo(x - s, y)
@@ -238,7 +240,8 @@ export function OrionNebula({ z }: { z: number }) {
       // Canvas 2d positive rotate is clockwise; negate so +NEBULA_SPIN is CCW.
       const angle = -local * NEBULA_SPIN * Math.PI * 2
       const t = now * 0.001 * Math.max(0, NEBULA_TWINKLE)
-      const px = Math.max(w, h) / 720
+      const starScale = mobile ? 1 : Math.max(0.01, NEBULA_STAR_SCALE_DESKTOP)
+      const px = (Math.max(w, h) / 720) * starScale
       const pivot = canvasPivot(canvas, w, h)
       const orbit = orbitOffset(canvas, w, h, pivot)
       const reach = pivotReach(w, h, pivot) * 1.06

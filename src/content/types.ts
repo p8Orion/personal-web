@@ -25,7 +25,7 @@ export type CardCopy = {
   /**
    * `horizontal` = 100% width, below the text.
    * `vertical` = column to the right of the text.
-   * `src`: `new URL('./images/file.jpg', import.meta.url).href`
+   * `src`: `pic('file.webp')` (`src/content/pic.ts`, files in `images/`)
    */
   pics: CardPic[]
 }

@@ -1,3 +1,4 @@
+import { pic } from './pic.ts'
 import type { CardCopy } from './types.ts'
 
 /** 00 INTRO — english */
@@ -8,7 +9,7 @@ export const intro = {
   text: "I'm a software engineer from Argentina, working in the energy and utilities sector.",
   pics: [
     {
-      src: new URL('./images/1-yo.jpg', import.meta.url).href,
+      src: pic('1-yo.webp'),
       fit: 'vertical',
     },
   ],

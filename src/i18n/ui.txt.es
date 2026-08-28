@@ -1,6 +1,6 @@
-# ORION.OS — español
-brand=ORION.OS
-document_title=ORION.OS
+# ORION-OS — español
+brand=ORION-OS
+document_title=ORION-OS
 document_description=Portfolio personal-profesional.
 skip_content=Saltar al contenido
 nav_aria=Secciones
@@ -16,7 +16,7 @@ lang.to_en=Cambiar a inglés
 lang.to_es=Cambiar a español
 boot.aria=Arranque del sistema
 boot.kicker=SYS / BOOT
-boot.0=ORION.OS  v0.1
+boot.0=ORION-OS  v0.1
 boot.1=kernel ............ hud-shell
 boot.2=check gpu ......... ok
 boot.3=mount overlay ..... ok

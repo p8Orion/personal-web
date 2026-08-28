@@ -1,3 +1,4 @@
+import { pic } from './pic.ts'
 import type { InterestsCopy } from './types.ts'
 
 /** 06 INTERESES — español */
@@ -7,10 +8,10 @@ export const interests = {
   subtitle: '',
   text: '',
   pics: [
-    { src: new URL('./images/3-a.webp', import.meta.url).href, fit: 'horizontal' },
-    { src: new URL('./images/3-b.webp', import.meta.url).href, fit: 'horizontal' },
-    { src: new URL('./images/3-c.webp', import.meta.url).href, fit: 'horizontal' },
-    { src: new URL('./images/3-d.webp', import.meta.url).href, fit: 'horizontal' },
+    { src: pic('3-a.webp'), fit: 'horizontal' },
+    { src: pic('3-b.webp'), fit: 'horizontal' },
+    { src: pic('3-c.webp'), fit: 'horizontal' },
+    { src: pic('3-d.webp'), fit: 'horizontal' },
   ],
   items: [
     { icon: '🤖', name: 'Inteligencia artificial', href: '' },
