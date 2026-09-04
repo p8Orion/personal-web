@@ -11,17 +11,23 @@ import { fadeRange, HORIZON_FADE_GLSL } from './horizonFade.ts'
 import { COLORS, paletteHues } from './materials.ts'
 
 const DEG = Math.PI / 180
-const GROUPS = 32
+const GROUPS = 40
 const RADIUS_MIN = 4
 const RADIUS_MAX = 42
-const CLUSTER_MIN = 14
-const CLUSTER_MAX = 26
+const CLUSTER_MIN = 6
+const CLUSTER_MAX = 40
+/** Bias toward small clusters. 1 = uniform; higher = more small, few large. */
+const CLUSTER_BIAS = 2
+/** Empty cells kept around every building, in grid cells. */
+const CLUSTER_GAP = 1
 const FOOTPRINT = GRID_CELL
 const BASE_MIN = 1
 const BASE_MAX = 3
 const HEIGHT_MIN = 1
 const HEIGHT_MAX = 10
-const SEARCH_CELLS = 400
+/** Bias toward small boxes. 1 = uniform; higher = more low/narrow, few towers. */
+const SIZE_BIAS = 2.2
+const SEARCH_CELLS = 1800
 
 type Structure = {
   rest: Vector3
@@ -33,8 +39,9 @@ function hash01(n: number): number {
   return x - Math.floor(x)
 }
 
-function pickInt(seed: number, min: number, max: number): number {
-  return min + Math.floor(hash01(seed) * (max - min + 1))
+/** Integer in [min, max]. bias 1 = uniform; > 1 crowds the draw toward min. */
+function pickInt(seed: number, min: number, max: number, bias: number): number {
+  return min + Math.round(hash01(seed) ** bias * (max - min))
 }
 
 function cellKey(x: number, z: number): number {
@@ -81,8 +88,8 @@ function canPlace(
   w: number,
   d: number,
 ): boolean {
-  for (let i = 0; i < w; i += 1) {
-    for (let j = 0; j < d; j += 1) {
+  for (let i = -CLUSTER_GAP; i < w + CLUSTER_GAP; i += 1) {
+    for (let j = -CLUSTER_GAP; j < d + CLUSTER_GAP; j += 1) {
       if (occupied.has(cellKey(x + i, z + j))) return false
     }
   }
@@ -107,6 +114,8 @@ const CANDIDATES = spiralCells(SEARCH_CELLS)
 
 function buildStructures(): Structure[] {
   const list: Structure[] = []
+  // Shared across clusters so the gap holds where two clusters meet.
+  const occupied = new Set<number>()
   for (let i = 0; i < GROUPS; i += 1) {
     const jitter = (hash01(i) * 2 - 1) * 8 * DEG
     const angle = (i / GROUPS) * Math.PI * 2 + jitter
@@ -114,18 +123,18 @@ function buildStructures(): Structure[] {
       RADIUS_MIN + hash01(i * 1.91) * (RADIUS_MAX - RADIUS_MIN)
     const originCellX = Math.floor((Math.cos(angle) * radius) / FOOTPRINT)
     const originCellZ = Math.floor((Math.sin(angle) * radius) / FOOTPRINT)
-    const count =
-      CLUSTER_MIN + Math.floor(hash01(i * 3.17) * (CLUSTER_MAX - CLUSTER_MIN + 1))
+    const count = pickInt(i * 3.17, CLUSTER_MIN, CLUSTER_MAX, CLUSTER_BIAS)
     const rot = Math.floor(hash01(i + 2.4) * 4)
-    const occupied = new Set<number>()
     let placed = 0
     for (let n = 0; n < CANDIDATES.length && placed < count; n += 1) {
       const [sx, sz] = CANDIDATES[n]
-      const [cellX, cellZ] = rotateOffset(sx, sz, rot)
+      const [offX, offZ] = rotateOffset(sx, sz, rot)
+      const cellX = originCellX + offX
+      const cellZ = originCellZ + offZ
       const seed = i * 11.3 + placed * 7.1
-      const w = pickInt(seed, BASE_MIN, BASE_MAX)
-      const d = pickInt(seed + 1.7, BASE_MIN, BASE_MAX)
-      const h = pickInt(seed + 3.1, HEIGHT_MIN, HEIGHT_MAX)
+      const w = pickInt(seed, BASE_MIN, BASE_MAX, SIZE_BIAS)
+      const d = pickInt(seed + 1.7, BASE_MIN, BASE_MAX, SIZE_BIAS)
+      const h = pickInt(seed + 3.1, HEIGHT_MIN, HEIGHT_MAX, SIZE_BIAS)
       if (!canPlace(occupied, cellX, cellZ, w, d)) continue
       occupy(occupied, cellX, cellZ, w, d)
       const sizeX = w * FOOTPRINT
@@ -133,9 +142,9 @@ function buildStructures(): Structure[] {
       const sizeZ = d * FOOTPRINT
       list.push({
         rest: new Vector3(
-          (originCellX + cellX) * FOOTPRINT + sizeX / 2,
+          cellX * FOOTPRINT + sizeX / 2,
           sizeY / 2,
-          (originCellZ + cellZ) * FOOTPRINT + sizeZ / 2,
+          cellZ * FOOTPRINT + sizeZ / 2,
         ),
         size: [sizeX, sizeY, sizeZ],
       })
@@ -194,9 +203,12 @@ const EDGE_FRAG = /* glsl */ `
       max(fwidth(vLocalPos.y), fwidth(vLocalPos.z))
     );
     float grid = glowLineFalloff(edgeDist, fw, uMajor, 0.028, 0.09);
-    float fade = gridMajorFade(vWorldPos, uCamPos, uFadeStart, uFadeEnd) * uZFade;
-    vec3 lit = mix(uFill, uPRIMARIO, grid);
-    gl_FragColor = vec4(mix(uFill, lit, fade), 1.0);
+    float fade = gridMajorFade(vWorldPos, uCamPos, uFadeStart, uFadeEnd);
+    // Two curves off one fade. The edges dim with distance, but the box stays
+    // opaque well past that so it keeps occluding the Z-panel behind it, and
+    // only dissolves in the last stretch before the horizon.
+    vec3 lit = mix(uFill, uPRIMARIO, grid * fade);
+    gl_FragColor = vec4(lit, gridSolid(fade) * uZFade);
   }
 `
 
@@ -231,7 +243,8 @@ export function GridStructures({ skipFx }: { skipFx: boolean }) {
     const mat = new EdgeMaterial() as EdgeMaterialInstance
     mat.toneMapped = false
     mat.fog = false
-    mat.transparent = false
+    mat.transparent = true
+    // Kept on so near boxes still occlude each other and the floor lines.
     mat.depthWrite = true
     return mat
   }, [])

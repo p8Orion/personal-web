@@ -95,10 +95,13 @@ ul {
   list-style: none;
 }
 
+/* Above .stage so the grid and buildings occlude the Z-panel, below .document
+   so the cards still win. Needs the canvas cleared with alpha 0. */
 .experience {
   position: fixed;
   inset: 0;
-  z-index: 0;
+  z-index: 6;
+  pointer-events: none;
 }
 
 .experience canvas {
@@ -598,7 +601,7 @@ ul {
   --cube-half: calc(var(--cube) / 2);
   position: fixed;
   inset: 0;
-  z-index: 7;
+  z-index: 5;
   pointer-events: none;
 }
 

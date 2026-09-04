@@ -22,6 +22,7 @@ const GRID_VERT = /* glsl */ `
 
 const GRID_FRAG = /* glsl */ `
   uniform vec3 uPRIMARIO;
+  uniform vec3 uFill;
   uniform vec3 uCamPos;
   uniform float uCell;
   uniform float uMajor;
@@ -54,8 +55,13 @@ const GRID_FRAG = /* glsl */ `
     float thinFade = (1.0 - smoothstep(uFadeStart * 0.32, uFadeEnd * 0.52, dist)) * horizon;
     float majorFade = (1.0 - smoothstep(uFadeStart * 0.65, uFadeEnd, dist)) * horizon;
     float grid = max(thin * 0.72 * thinFade, major * majorFade);
-    float fill = 0.04 * majorFade;
-    gl_FragColor = vec4(uPRIMARIO, (grid + fill) * uZFade);
+    // Opaque floor, so the Z-panel behind the canvas stops showing through the
+    // cells. The old 0.04 phosphor wash is baked into the fill instead of being
+    // stacked on top of it as extra alpha.
+    float solid = gridSolid(majorFade);
+    vec3 base = mix(uFill, uPRIMARIO, 0.04 * majorFade);
+    vec3 lit = mix(base, uPRIMARIO, grid);
+    gl_FragColor = vec4(lit, max(grid, solid) * uZFade);
   }
 `
 
@@ -65,6 +71,7 @@ const GridMaterial = shaderMaterial(
     uCell: 0.2,
     uFadeEnd: 88,
     uFadeStart: 24,
+    uFill: new Color(COLORS.bg),
     uMajor: 1,
     uPRIMARIO: new Color(COLORS.phosphor),
     uYaw: 0,
@@ -81,6 +88,7 @@ type GridMaterialInstance = ShaderMaterial & {
   uCell: number
   uFadeEnd: number
   uFadeStart: number
+  uFill: Color
   uMajor: number
   uPRIMARIO: Color
   uYaw: number

@@ -2,6 +2,21 @@
 
 Trampas no obvias y soluciones reutilizables de este repo. Más recientes primero. Sin secretos.
 
+## 2026-09-04 — cambiar `gl.alpha` del `<Canvas>` no toma efecto con HMR
+
+- **Síntoma:** después de pasar el `<Canvas>` a `alpha: true` y bajar el Z-panel debajo de `.experience` en mobile, no se veía **nada** del Z-panel: matrix, fractal y nebulosa tapados por negro. El CSS nuevo sí se aplicaba.
+- **Contexto:** `src/scene/Experience.tsx` (react-three-fiber), Vite dev server, DevTools en modo celular.
+- **Causa:** los flags de `gl={{...}}` van al `getContext('webgl2')` y el contexto WebGL se crea **una sola vez**. Un HMR update re-renderiza el componente pero reusa el contexto, así que el canvas sigue con `alpha: false` y opaco. El CSS de stacking sí se aplica al instante, o sea que quedás con el canvas opaco *arriba* del Z-panel: el peor de los dos mundos, y parece que el reorden de capas está mal.
+- **Solución:** recargar la página entera (F5) después de tocar cualquier flag de `gl`. Verificar con `document.querySelector('.experience canvas').getContext('webgl2').getContextAttributes().alpha`.
+- **No reintentar:** buscar el culpable en `z-index`, en `scene.background` o en `setClearColor`. Con el contexto correcto los tres estaban bien.
+
+## 2026-09-04 — en mobile la card tapa casi todo el Z-panel
+
+- **Síntoma:** con el Z-panel detrás de la grid en mobile, los efectos (matrix/nebulosa) siguen sin verse aunque el canvas ya sea transparente y las capas estén bien ordenadas.
+- **Contexto:** `@media (max-width: 768px)` en `src/styles.css`. Ahí `.stage` es `top: 0; bottom: 50%` y `.document__card` está centrada verticalmente.
+- **Causa:** en un viewport de 390×844 la card mide ~355×642 y arranca en `y = -82`, así que cubre el rango 0–422 completo del stage y deja solo ~18 px de margen a cada lado. El `.panel` es `rgba(14,11,13,0.8)` + `backdrop-filter: blur(10px)`, o sea que lo que queda detrás pasa a ~20% y borroneado.
+- **Solución:** para verificar si el stage realmente dibuja, ocultar la card (`document.querySelector('.document').style.visibility = 'hidden'`) antes de concluir que el Z-panel no renderiza. Para que se vea en uso real hay que tocar la opacidad del panel o la geometría del stage, no el `z-index`.
+
 ## 2026-08-28 — clamp independiente de canvas.width/height estira el overlay
 
 - **Síntoma:** Mandelbrot, matrix y nebulosa se veían estirados y en baja resolución en desktop, aunque el Z-panel ya era fullscreen.

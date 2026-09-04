@@ -35,18 +35,19 @@ export function Experience() {
         dpr={tier.dpr}
         frameloop={visible ? 'always' : 'never'}
         gl={{
-          alpha: false,
+          alpha: true,
           antialias: true,
           depth: true,
           powerPreference: 'high-performance',
           stencil: false,
         }}
         onCreated={({ gl }) => {
-          gl.setClearColor(COLORS.bg, 1)
+          // Transparent sky so the Z-panel can sit behind the grid on mobile.
+          // Body background paints the same COLORS.bg underneath.
+          gl.setClearColor(COLORS.bg, 0)
         }}
         style={{ pointerEvents: 'none' }}
       >
-        <color args={[COLORS.bg]} attach="background" />
         <fog attach="fog" args={[COLORS.bg, 28, 96]} />
         <ambientLight intensity={0.22} />
         <hemisphereLight

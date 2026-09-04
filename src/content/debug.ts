@@ -29,7 +29,7 @@ export const NEBULA_Z_END = 1.05
 export const PRIMARY_HUE_AT_Z0 = 330 / 360
 
 /** Peak opacity. 1 = solid. */
-export const FRACTAL_ALPHA = 0.6
+export const FRACTAL_ALPHA = 0.75
 
 /** Zoom pace across the fractal window. 1 = uses the whole window. */
 export const FRACTAL_ZOOM_SPEED = 1
@@ -50,7 +50,7 @@ export const FRACTAL_HUE_SPAN = 1
 export const FRACTAL_SPIN = 1
 
 /** Peak opacity. 1 = solid. */
-export const MATRIX_ALPHA = 0.55
+export const MATRIX_ALPHA = 0.75
 
 /** Glyph scroll. 2 = twice as fast. */
 export const MATRIX_SPEED = 1.5
@@ -86,7 +86,7 @@ export const NEBULA_PIVOT_Y = 0.5
 export const NEBULA_RADIUS = 1
 
 /** Photo zoom. 1 = covers the Z-panel. */
-export const NEBULA_ZOOM = 2
+export const NEBULA_ZOOM = 1.5
 
 /** Fade-in/out in Z. 0 = hard cut. Capped at half the window. */
 export const NEBULA_Z_FADE = 0.05
@@ -104,7 +104,7 @@ export const NEBULA_HUE_SPAN = 1
 export const NEBULA_STAR_COUNT = 180
 
 /** Desktop star size vs mobile. 1 = same; 0.2 = five times smaller. */
-export const NEBULA_STAR_SCALE_DESKTOP = 0.2
+export const NEBULA_STAR_SCALE_DESKTOP = 0.5
 
 /** Twinkle speed. 2 = twice as fast. */
 export const NEBULA_TWINKLE = 1
