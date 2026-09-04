@@ -357,14 +357,20 @@ export function SectionCopy() {
   return (
     <main className="document">
       <div aria-hidden className="document__runway">
-        {SECTIONS.filter((section) => NAV_Z[section.id] !== undefined).map((section) => (
-          <span
-            className="document__anchor"
-            id={section.id}
-            key={section.id}
-            style={{ top: `${NAV_Z[section.id] * 100}%` }}
-          />
-        ))}
+        {SECTIONS.flatMap((section) => {
+          // Read once and branch on the local: a filter() first would not narrow
+          // the second lookup, since NAV_Z is a Partial record.
+          const top = NAV_Z[section.id]
+          if (top === undefined) return []
+          return [
+            <span
+              className="document__anchor"
+              id={section.id}
+              key={section.id}
+              style={{ top: `${top * 100}%` }}
+            />,
+          ]
+        })}
       </div>
       <div className="document__stage">
         <CardSlot ghost id="intro" reach={reach} window={CARD_Z.intro} z={z}>
@@ -433,20 +439,37 @@ export function SectionCopy() {
               <p className="hint">{t('hint.projects')}</p>
             ) : (
               <ul className="project-list">
-                {projects.items.map((project) => (
-                  <li key={project.id}>
-                    <button
-                      className="project-row"
-                      onClick={() => setSelectedProjectId(project.id)}
-                      type="button"
-                    >
-                      <span className="project-row__title">{project.title}</span>
-                      {filled(project.year) ? (
-                        <span className="hud__dim">{project.year}</span>
-                      ) : null}
-                    </button>
-                  </li>
-                ))}
+                {projects.items.map((project) => {
+                  // Same rule as the interest rows: a row is only interactive when
+                  // there is something behind it. With summary, tags, href and year
+                  // all empty, ProjectPanel can do nothing but repeat the title.
+                  const opens =
+                    filled(project.summary) ||
+                    filled(project.href) ||
+                    filled(project.year) ||
+                    project.tags.length > 0
+
+                  return (
+                    <li key={project.id}>
+                      {opens ? (
+                        <button
+                          className="project-row"
+                          onClick={() => setSelectedProjectId(project.id)}
+                          type="button"
+                        >
+                          <span className="project-row__title">{project.title}</span>
+                          {filled(project.year) ? (
+                            <span className="hud__dim">{project.year}</span>
+                          ) : null}
+                        </button>
+                      ) : (
+                        <span className="project-row">
+                          <span className="project-row__title">{project.title}</span>
+                        </span>
+                      )}
+                    </li>
+                  )
+                })}
               </ul>
             )}
           </CardBody>

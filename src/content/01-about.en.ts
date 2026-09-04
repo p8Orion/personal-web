@@ -6,7 +6,8 @@ export const about = {
   eyebrow: '🐈',
   title: 'My cats say hi!',
   subtitle: '',
-  //text: 'Tota (the pig), Totito, Orange and Maillo',
+  // Off for now: 'Tota (the pig), Totito, Orange and Maillo'
+  text: '',
   pics: [
     { src: pic('2-a.webp'), fit: 'horizontal' },
     { src: pic('2-b.webp'), fit: 'horizontal' },

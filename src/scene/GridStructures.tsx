@@ -2,7 +2,15 @@ import { shaderMaterial } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo } from 'react'
 import { BoxGeometry, Color, ShaderMaterial, Vector3 } from 'three'
-import { GRID_GLOW, GRID_Z_END, GRID_Z_FADE, GRID_Z_START } from '../content/debug.ts'
+import {
+  CITY_BASE_BIAS,
+  CITY_HEIGHT_BIAS,
+  CITY_SEED,
+  GRID_GLOW,
+  GRID_Z_END,
+  GRID_Z_FADE,
+  GRID_Z_START,
+} from '../content/debug.ts'
 import { zWindowFade } from '../content/zMap.ts'
 import { getSmoothedScrollProgress } from '../hooks/useScrollProgress.ts'
 import { GRID_GLOW_LINE_GLSL } from './gridGlow.ts'
@@ -25,8 +33,6 @@ const BASE_MIN = 1
 const BASE_MAX = 3
 const HEIGHT_MIN = 1
 const HEIGHT_MAX = 10
-/** Bias toward small boxes. 1 = uniform; higher = more low/narrow, few towers. */
-const SIZE_BIAS = 2.2
 const SEARCH_CELLS = 1800
 
 type Structure = {
@@ -34,8 +40,14 @@ type Structure = {
   size: [number, number, number]
 }
 
+/**
+ * Drawn once per load. Every angle, radius, count, rotation and box size runs
+ * through hash01, so offsetting it here reshuffles the whole city at once.
+ */
+const RUN_SEED = CITY_SEED < 0 ? Math.random() * 1e4 : CITY_SEED
+
 function hash01(n: number): number {
-  const x = Math.sin(n * 127.1 + 311.7) * 43758.5453
+  const x = Math.sin((n + RUN_SEED) * 127.1 + 311.7) * 43758.5453
   return x - Math.floor(x)
 }
 
@@ -132,9 +144,9 @@ function buildStructures(): Structure[] {
       const cellX = originCellX + offX
       const cellZ = originCellZ + offZ
       const seed = i * 11.3 + placed * 7.1
-      const w = pickInt(seed, BASE_MIN, BASE_MAX, SIZE_BIAS)
-      const d = pickInt(seed + 1.7, BASE_MIN, BASE_MAX, SIZE_BIAS)
-      const h = pickInt(seed + 3.1, HEIGHT_MIN, HEIGHT_MAX, SIZE_BIAS)
+      const w = pickInt(seed, BASE_MIN, BASE_MAX, CITY_BASE_BIAS)
+      const d = pickInt(seed + 1.7, BASE_MIN, BASE_MAX, CITY_BASE_BIAS)
+      const h = pickInt(seed + 3.1, HEIGHT_MIN, HEIGHT_MAX, CITY_HEIGHT_BIAS)
       if (!canPlace(occupied, cellX, cellZ, w, d)) continue
       occupy(occupied, cellX, cellZ, w, d)
       const sizeX = w * FOOTPRINT

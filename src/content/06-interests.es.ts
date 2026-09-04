@@ -4,7 +4,7 @@ import type { InterestsCopy } from './types.ts'
 /** 06 INTERESES — español */
 export const interests = {
   eyebrow: '01 | Cortocircuitando...',
-  title: '',
+  title: 'Lo que me da curiosidad',
   subtitle: '',
   text: '',
   pics: [
@@ -16,7 +16,7 @@ export const interests = {
   items: [
     { icon: '🤖', name: 'Inteligencia artificial', href: '' },
     {
-      icon: '🧘',
+      icon: '🌀',
       name: 'Filosofía de la mente y la conciencia, meditación y adyacentes',
       href: '',
     },

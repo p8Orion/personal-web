@@ -36,6 +36,9 @@ const CUSTOM: Record<string, string> = {
     'M3.2 6.2A1.8 1.8 0 0 1 5 4.4h14a1.8 1.8 0 0 1 1.8 1.8v10.6a1.8 1.8 0 0 1-1.8 1.8H5a1.8 1.8 0 0 1-1.8-1.8V6.2zm1.7 1.3v2.4h14.2V7.5H4.9z',
   // Spark
   ai: 'M12 2.1 13.2 9 20.5 10.5 13.2 12 12 21.9 10.8 12 3.5 10.5 10.8 9 12 2.1z',
+  // Speech bubble — "fluent" in the joke language of nets
+  neuralese:
+    'M4 5.2A2.7 2.7 0 0 1 6.7 2.5h10.6A2.7 2.7 0 0 1 20 5.2v7.1a2.7 2.7 0 0 1-2.7 2.7H10.4L5.2 20.2V15H6.7A2.7 2.7 0 0 1 4 12.3V5.2z',
   // LinkedIn "in" — not on simple-icons (trademark)
   linkedin:
     'M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 1 1 0-4.125 2.062 2.062 0 0 1 0 4.125zM7.119 20.452H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z',
@@ -52,6 +55,7 @@ export const ICONS: Record<string, string> = {
   payments: CUSTOM.payments,
   unity: pathOf(unity),
   ai: CUSTOM.ai,
+  neuralese: CUSTOM.neuralese,
   docker: pathOf(docker),
   linux: pathOf(linux),
   azure: CUSTOM.azure,

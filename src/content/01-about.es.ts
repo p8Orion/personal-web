@@ -3,9 +3,10 @@ import type { CardCopy } from './types.ts'
 
 /** 01 SOBRE — español */
 export const about = {
-  eyebrow: '01 | Descombobulando...',
-  title: '',
+  eyebrow: '🐈',
+  title: '¡Mis gatos te mandan saludos!',
   subtitle: '',
+  // Apagado por ahora: 'Tota (la chancha), Totito, Orange y Maillo'
   text: '',
   pics: [
     { src: pic('2-a.webp'), fit: 'horizontal' },

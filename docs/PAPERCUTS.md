@@ -2,6 +2,30 @@
 
 Trampas no obvias y soluciones reutilizables de este repo. Más recientes primero. Sin secretos.
 
+## 2026-09-04 — `npx tsc --noEmit` en este repo no chequea NADA y sale 0
+
+- **Síntoma:** `npx tsc --noEmit` sale con código 0 y da a entender que el proyecto tipa bien. En realidad `npm run build` estaba roto hacía rato, con tres errores (`01-about.en.ts` sin `text`, y dos en `SectionCopy.tsx`).
+- **Contexto:** raíz del repo, cualquier verificación de tipos antes de commitear o después de tocar `src/content`.
+- **Causa:** el `tsconfig.json` de la raíz es un *solution file*: `{"files": [], "references": [...]}`. Sin `-b`, `tsc` lee ese archivo, ve cero archivos de entrada y termina contento. Los `compilerOptions` y el `include: ["src"]` viven en `tsconfig.app.json`, que solo se alcanza siguiendo las referencias. El exit 0 es el peor resultado posible porque parece confirmación.
+- **Solución:** `npx tsc -b` (agregar `--force` si el `.tsbuildinfo` está caliente y querés rechequear todo). Es lo que corre `npm run build`. Filtrar el ruido de PowerShell con `2>&1 | Select-String -NotMatch 'npm warn|CategoryInfo|^\s*\+'`, porque el warning de npm en stderr hace que PowerShell reporte `NativeCommandError` aunque el exit code sea 0.
+- **No reintentar:** `npx tsc --noEmit -p tsconfig.app.json` tampoco es equivalente: ignora `tsconfig.node.json` y por lo tanto `vite.config.ts`.
+
+## 2026-09-04 — mezclar propiedades eased y lineales en la misma ventana de Z parece que algo se rompe
+
+- **Síntoma:** el fractal hace zoom y a determinada altura "se termina" el zoom y queda girando en el lugar. Tercera vez que aparece la misma familia de bug en el archivo (antes con el hue y con el spin).
+- **Contexto:** `paint()` en `src/ui/MandelbrotField.tsx`. Varias propiedades se manejan del mismo `t` normalizado de la ventana.
+- **Causa:** el zoom pasaba por `t*t*(3-2t)` y el spin era lineal en `t`. Smoothstep tiene pendiente **cero** en los dos extremos, así que sobre el final del recorrido el zoom frena hasta detenerse mientras el spin sigue a tasa constante. No hay ningún clamp ni límite involucrado: es solo que dos propiedades animadas sobre la misma ventana usan curvas distintas, y la que se estaciona hace que la otra parezca el bug. Se pierde tiempo buscando un `Math.min` o un tope de escala.
+- **Solución:** lineal en `t` para todo lo que anima sobre la ventana. Para el zoom no se pierde nada: la escala es exponencial, así que pendiente constante en log ya **es** velocidad aparente constante, y el ease-in sobra porque el fade de opacidad ya tapa la entrada. Si agregás otra propiedad animada acá, hacela lineal salvo que tengas una razón, y si le ponés easing ponéselo a todas.
+- **No reintentar:** compensar subiendo `FRACTAL_ZOOM_SPEED`. Arriba de 1 el `min(1, ...)` clava el zoom en el piso todavía antes y agrava exactamente el mismo síntoma.
+
+## 2026-09-04 — las coordenadas "famosas" del Mandelbrot no sirven como targets de zoom
+
+- **Síntoma:** con `TARGETS` cargado de landmarks conocidos (seahorse valley, scepter, triple spiral, elephant valley…), en muchas ejecuciones el fractal no mostraba nada.
+- **Contexto:** `TARGETS` en `src/ui/MandelbrotField.tsx`, recorrido de `SCALE_START = 0.14` a ~8e-5 con un presupuesto de 256 iteraciones.
+- **Causa:** dos cosas que no se ven a simple vista. Una, una coordenada publicada es interesante **a la profundidad para la que se publicó**; acá el mismo punto tiene que aguantar todo el rango, y a 3.6e-2 el medio alto de pantalla ya es 0.018, así que errarle por poco al borde deja el frame entero adentro o entero afuera. Dos, "no se ve nada" tiene dos formas opuestas y se confunden: todo interior es negro literal (alpha 0), y todo exterior con `mu` casi constante es un lavado plano de un color. Medido: scepter valley daba `inside = 1.00` de profundidad media en adelante y triple spiral `inside = 0.00`. Ninguna de las dos se detecta mirando el código.
+- **Solución:** `scripts/fractal-targets.mjs` replica el escape del shader en Node, puntúa cada candidato por su **peor** frame del recorrido (estructura en pantalla × qué tan lejos está el split interior/exterior de los dos extremos muertos) y busca puntos nuevos por bisección entre un punto de adentro y uno de afuera, más hill-climbing. Los targets encontrados puntúan 0.22–0.32 contra 0.00–0.095 de los famosos. Si cambiás el rango de escalas o `FRACTAL_MAX_ITER`, corré el script de nuevo: los targets son válidos para *ese* recorrido, no en abstracto.
+- **No reintentar:** buscar más coordenadas publicadas, ni juzgarlas por un screenshot. Un target puede abrir perfecto y morir a mitad del zoom, que es justo lo que el promedio esconde y el peor frame expone.
+
 ## 2026-09-04 — cambiar `gl.alpha` del `<Canvas>` no toma efecto con HMR
 
 - **Síntoma:** después de pasar el `<Canvas>` a `alpha: true` y bajar el Z-panel debajo de `.experience` en mobile, no se veía **nada** del Z-panel: matrix, fractal y nebulosa tapados por negro. El CSS nuevo sí se aplicaba.

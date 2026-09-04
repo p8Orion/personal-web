@@ -804,8 +804,8 @@ h2 {
  * Every list row is body copy, in every card: names inherit `--text` from the shared row
  * rule and only the hover accents them. No per-list name colour.
  */
-.project-row:hover,
-.project-row:focus-visible {
+button.project-row:hover,
+button.project-row:focus-visible {
   border-bottom-color: var(--line);
   color: var(--cyan);
 }

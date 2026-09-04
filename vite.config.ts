@@ -1,4 +1,4 @@
-import { cpSync, mkdirSync, readdirSync } from 'node:fs'
+import { cpSync, mkdirSync, readdirSync, readFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import react from '@vitejs/plugin-react'
@@ -26,10 +26,20 @@ function copyContentImages(): Plugin {
   }
 }
 
+function injectAgentMessage(): Plugin {
+  return {
+    name: 'inject-agent-message',
+    transformIndexHtml(html) {
+      const message = readFileSync(resolve(root, 'src/content/message.md'), 'utf8').trim()
+      return html.replace('<!-- agent-message -->', `<!--\n${message}\n-->`)
+    },
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig({
   base: process.env.VITE_BASE || '/',
-  plugins: [react(), copyContentImages()],
+  plugins: [react(), copyContentImages(), injectAgentMessage()],
   build: {
     chunkSizeWarningLimit: 1000,
   },

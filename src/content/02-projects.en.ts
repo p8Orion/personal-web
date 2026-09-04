@@ -40,7 +40,7 @@ export const projects = {
     },
     {
       id: 'dip',
-      title: '> A mod of JDip where LLMs with different personalities play each other ',
+      title: '> A JDip mod where LLMs with different personalities play Diplomacy',
       summary: '',
       tags: [],
       href: '',

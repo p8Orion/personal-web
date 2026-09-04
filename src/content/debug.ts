@@ -9,6 +9,15 @@ export const DEBUG_STAGE_CUBE = false
 /** Building clusters on the grid. */
 export const DEBUG_BUILDINGS = true
 
+/** City layout seed. Negative = a fresh random city on every load. */
+export const CITY_SEED = -1
+
+/** Bias toward low buildings. 1 = every height equally likely; higher = more low. */
+export const CITY_HEIGHT_BIAS = 3.5
+
+/** Same for the footprint. Higher = more 1x1 boxes, fewer wide ones. */
+export const CITY_BASE_BIAS = 2.2
+
 /**
  * Z windows. Inclusive ranges where each layer is on stage.
  * Fade knobs live with their layer below.
@@ -31,7 +40,11 @@ export const PRIMARY_HUE_AT_Z0 = 330 / 360
 /** Peak opacity. 1 = solid. */
 export const FRACTAL_ALPHA = 0.75
 
-/** Zoom pace across the fractal window. 1 = uses the whole window. */
+/**
+ * Zoom pace across the fractal window. 1 = uses the whole window. Above 1 the
+ * zoom hits its floor early and then only the spin moves, so raise it knowing
+ * that is the trade.
+ */
 export const FRACTAL_ZOOM_SPEED = 1
 
 /** Fade-in/out in Z. 0 = hard cut. Capped at half the window. */
@@ -43,8 +56,51 @@ export const FRACTAL_EDGE_FADE = 0.5
 /** Zoom-axis seed. 0 = shallow, 1 = already at max zoom. */
 export const FRACTAL_SEED = 0.3
 
+/** Random spread added to that seed, drawn once per load. 0 = same view always. */
+export const FRACTAL_SEED_JITTER = 0.35
+
+/**
+ * Which boundary point the zoom heads for, 0-9, best-scoring first. Negative =
+ * a random one per load. See TARGETS in MandelbrotField, and the script that
+ * found them at scripts/fractal-targets.mjs.
+ */
+export const FRACTAL_TARGET = -1
+
+/**
+ * Pan onto the target, as a fraction of whatever is on screen at the time, so
+ * it holds up at any depth. 0.5 starts the target at the frame edge. 0 = none.
+ */
+export const FRACTAL_DRIFT = 0.35
+
+/** Device-pixel cap of the fractal buffer. 2 = full detail on a retina screen. */
+export const FRACTAL_MAX_DPR = 2
+
+/** Longest edge of that buffer, in pixels. The real cap on most desktops. */
+export const FRACTAL_MAX_EDGE = 2560
+
+/**
+ * Samples per pixel per axis. 2 = 4 samples. Kills the speckle where the escape
+ * bands get thinner than a pixel. Costs its own square: 2 is 4x the shader work.
+ */
+export const FRACTAL_SUPERSAMPLE = 2
+
+/** Softening blur over the fractal, in CSS pixels. 0 = off. */
+export const FRACTAL_BLUR = 0.5
+
+/** Escape-loop ceiling. Raise it if deep zoom looks mushy rather than blurry. */
+export const FRACTAL_MAX_ITER = 256
+
 /** Hue walk across the fractal window, in turns. 1 = a full circle. */
 export const FRACTAL_HUE_SPAN = 1
+
+/** Hue wobble around that walk, in turns. 0 = off. 0.03 is about 11 degrees. */
+export const FRACTAL_PULSE = 0.05
+
+/** Seconds of the slowest wobble layer. Higher = lazier drift. */
+export const FRACTAL_PULSE_PERIOD = 5
+
+/** Irregularity. 0 = clean sine; 1 = faster layers at full strength. */
+export const FRACTAL_PULSE_DRIFT = 0.65
 
 /** Spin across the fractal window, in turns. Negative = reverse. */
 export const FRACTAL_SPIN = 1
@@ -164,6 +220,24 @@ export function applyDebugVars(): void {
   root.setProperty('--shine-to', `${(1 / (1 - band)) * 100}%`)
   root.setProperty('--pic-feather', `${Math.min(49, Math.max(0, PIC_FEATHER))}%`)
 }
+
+/** Energy orbs running along the grid lines, in SC_1 and SC_2. 0 = off. */
+export const ORB_COUNT = 48
+
+/** World units per second. */
+export const ORB_SPEED = 7
+
+/** Random spread around that speed. 0 = every orb runs at the same pace. */
+export const ORB_SPEED_JITTER = 0.55
+
+/** Diameter in world units. A floor cell is 0.2. */
+export const ORB_SIZE = 0.5
+
+/** Half-extent of the patrolled area, in world units. */
+export const ORB_SPAN = 48
+
+/** Chance of turning 90 degrees at each intersection. 0 = dead straight. */
+export const ORB_TURN = 0.2
 
 /** Floor-line spread. 0.5 = tighter, 2 = wider glow. */
 export const GRID_GLOW = 1
