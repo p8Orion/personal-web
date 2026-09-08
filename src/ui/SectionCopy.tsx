@@ -39,21 +39,17 @@ function boxOf(el: Element): Box {
 function measureOpen(shot: HTMLButtonElement, src: string): PicOpen {
   const img = shot.querySelector('img')
   const origin = boxOf(img ?? shot)
-  const panel = shot.closest('.panel')
-  const card = panel ? boxOf(panel) : origin
   // clientWidth/Height, not innerWidth/Height: same box a fixed element is laid out in,
   // which on mobile is what the URL bar shifts around.
   const root = document.documentElement
   const mobile = root.clientWidth <= 768
-  // Mobile cards sit inside a narrow gutter, so the photo borrows it back.
-  const avail = mobile ? root.clientWidth - 12 : card.width
-  const size = Math.min(avail, Math.max(160, root.clientHeight - 48))
+  const size = mobile
+    ? Math.min(root.clientWidth - 12, Math.max(160, root.clientHeight - 48))
+    : Math.min(root.clientWidth - 48, root.clientHeight * 0.5)
   return {
     src,
     origin,
-    left: mobile
-      ? (root.clientWidth - size) / 2
-      : card.left + (card.width - size) / 2,
+    left: (root.clientWidth - size) / 2,
     size,
   }
 }

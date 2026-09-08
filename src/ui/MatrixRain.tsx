@@ -1,6 +1,9 @@
 import { useEffect, useRef } from 'react'
 import {
   MATRIX_ALPHA,
+  MATRIX_CLOUD_ALPHA,
+  MATRIX_CLOUD_HUE,
+  MATRIX_CLOUD_SPEED,
   MATRIX_DENSITY_DESKTOP,
   MATRIX_EDGE_FADE,
   MATRIX_HUE_SPAN,
@@ -10,8 +13,9 @@ import {
   MATRIX_Z_FADE,
   MATRIX_Z_START,
 } from '../content/debug.ts'
-import { hueToRgb, paletteHues } from '../scene/materials.ts'
+import { hueToRgb, paletteHues, wrapHue } from '../scene/materials.ts'
 import { fitOverlayCanvas } from './fitOverlayCanvas.ts'
+import { applyEdgeMask, paintClouds } from './stageClouds.ts'
 
 const GLYPHS =
   '0123456789ABCDEF<>[]{};:=/\\|*+#ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎ01$#@'
@@ -62,7 +66,8 @@ function buildColumns(
   density: number,
 ): Column[] {
   const hold = Math.max(0.25, MATRIX_TRAIL)
-  const count = Math.max(8, Math.ceil(width / colW))
+  // Same cell size as before; a bit of unused pitch so trails do not sit flush.
+  const count = Math.max(8, Math.ceil(width / (colW * 1.28)))
   const cols: Column[] = []
   for (let i = 0; i < count; i += 1) {
     const trail = Math.max(6, Math.round((10 + (i * 7) % 18) * hold * density))
@@ -78,43 +83,9 @@ function buildColumns(
   return cols
 }
 
-function applyEdgeMask(
-  ctx: CanvasRenderingContext2D,
-  w: number,
-  h: number,
-  edge: number,
-  bottomOnly: boolean,
-): void {
-  const uv = Math.min(0.5, Math.max(0, edge))
-  if (uv < 1e-5) return
-  ctx.globalCompositeOperation = 'destination-in'
-  if (bottomOnly) {
-    const g = ctx.createLinearGradient(0, h * (1 - uv), 0, h)
-    g.addColorStop(0, '#fff')
-    g.addColorStop(1, 'rgba(0,0,0,0)')
-    ctx.fillStyle = g
-    ctx.fillRect(0, 0, w, h)
-  } else {
-    const gx = ctx.createLinearGradient(0, 0, w, 0)
-    gx.addColorStop(0, 'rgba(0,0,0,0)')
-    gx.addColorStop(uv, '#fff')
-    gx.addColorStop(1 - uv, '#fff')
-    gx.addColorStop(1, 'rgba(0,0,0,0)')
-    ctx.fillStyle = gx
-    ctx.fillRect(0, 0, w, h)
-    const gy = ctx.createLinearGradient(0, 0, 0, h)
-    gy.addColorStop(0, 'rgba(0,0,0,0)')
-    gy.addColorStop(uv, '#fff')
-    gy.addColorStop(1 - uv, '#fff')
-    gy.addColorStop(1, 'rgba(0,0,0,0)')
-    ctx.fillStyle = gy
-    ctx.fillRect(0, 0, w, h)
-  }
-  ctx.globalCompositeOperation = 'source-over'
-}
-
 export function MatrixRain({ z }: { z: number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const cloudRef = useRef<HTMLCanvasElement>(null)
   const colsRef = useRef<Column[]>([])
   const zRef = useRef(z)
   zRef.current = z
@@ -123,16 +94,20 @@ export function MatrixRain({ z }: { z: number }) {
   useEffect(() => {
     if (fade <= 0.001) return
     const canvas = canvasRef.current
+    const cloud = cloudRef.current
     if (!canvas) return
     const ctx = canvas.getContext('2d')
+    const cloudCtx = cloud?.getContext('2d')
     if (!ctx) return
 
     let frame = 0
     let last = performance.now()
+    let lastDraw = 0
     let colW = 14
     let lineH = 16
     let fitted = false
     let lastDensity = 0
+    const gap = 1000 / 30
 
     const fit = () => {
       const density = glyphDensity()
@@ -149,14 +124,15 @@ export function MatrixRain({ z }: { z: number }) {
     }
 
     const draw = (now: number) => {
+      frame = requestAnimationFrame(draw)
+      if (document.visibilityState !== 'visible') return
+      if (now - lastDraw < gap) return
       const dt = Math.min(0.05, (now - last) / 1000)
       last = now
+      lastDraw = now
       const zNow = zRef.current
       const vis = matrixWindowFade(zNow)
-      if (vis <= 0.001) {
-        frame = requestAnimationFrame(draw)
-        return
-      }
+      if (vis <= 0.001) return
       fit()
       const w = canvas.width
       const h = canvas.height
@@ -164,9 +140,21 @@ export function MatrixRain({ z }: { z: number }) {
       const local = Math.min(1, Math.max(0, (zNow - start) / (end - start)))
       const hues = paletteHues(start + local * MATRIX_HUE_SPAN)
       const [r, g, b] = hueToRgb(hues.SC_1, 0.82, 0.55)
+      const cloudRgb = hueToRgb(wrapHue(hues.SC_2 + MATRIX_CLOUD_HUE), 0.4, 0.4)
       const speed = Math.max(0, MATRIX_SPEED)
       const hold = Math.max(0.25, MATRIX_TRAIL)
       const mobile = window.matchMedia('(max-width: 768px)').matches
+      if (cloud && cloudCtx && MATRIX_CLOUD_ALPHA > 0) {
+        paintClouds(
+          cloud,
+          cloudCtx,
+          cloudRgb,
+          now * 0.001,
+          MATRIX_CLOUD_SPEED,
+          MATRIX_EDGE_FADE,
+          mobile,
+        )
+      }
 
       const erase = Math.min(1, 1 / hold)
       if (erase >= 0.999) {
@@ -205,7 +193,6 @@ export function MatrixRain({ z }: { z: number }) {
       }
 
       applyEdgeMask(ctx, w, h, MATRIX_EDGE_FADE, mobile)
-      frame = requestAnimationFrame(draw)
     }
 
     fit()
@@ -216,11 +203,17 @@ export function MatrixRain({ z }: { z: number }) {
   if (fade <= 0.001) return null
 
   return (
-    <canvas
-      aria-hidden
-      className="stage__matrix"
-      ref={canvasRef}
-      style={{ opacity: fade * MATRIX_ALPHA }}
-    />
+    <div aria-hidden className="stage__matrix">
+      <canvas
+        className="stage__matrix-clouds"
+        ref={cloudRef}
+        style={{ opacity: fade * MATRIX_CLOUD_ALPHA }}
+      />
+      <canvas
+        className="stage__matrix-rain"
+        ref={canvasRef}
+        style={{ opacity: fade * MATRIX_ALPHA }}
+      />
+    </div>
   )
 }

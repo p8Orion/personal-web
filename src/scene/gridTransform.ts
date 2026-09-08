@@ -31,6 +31,13 @@ export function setFloorPivotAtScreenBottom(
 /** Minor cell size of the floor grid — world objects snap to this. */
 export const GRID_CELL = 0.2
 
+/** Major-line spacing. Thin cells tile this exactly (5 per major). */
+export const GRID_MAJOR = 1
+
+export function gridSpacing(skipFx: boolean): { cell: number; major: number } {
+  return skipFx ? { cell: 0.27, major: 1.35 } : { cell: GRID_CELL, major: GRID_MAJOR }
+}
+
 export function snapToGrid(value: number, cell = GRID_CELL): number {
   return Math.round(value / cell) * cell
 }

@@ -9,7 +9,7 @@ export const intro = {
   text: 'Soy un profesional del software, de Argentina. Trabajo en el sector de energía y servicios públicos.',
   pics: [
     {
-      src: pic('1-yo.webp'),
+      src: pic('me1.png'),
       fit: 'vertical',
     },
   ],

@@ -82,10 +82,10 @@ export const FRACTAL_MAX_EDGE = 2560
  * Samples per pixel per axis. 2 = 4 samples. Kills the speckle where the escape
  * bands get thinner than a pixel. Costs its own square: 2 is 4x the shader work.
  */
-export const FRACTAL_SUPERSAMPLE = 2
+export const FRACTAL_SUPERSAMPLE = 1
 
 /** Softening blur over the fractal, in CSS pixels. 0 = off. */
-export const FRACTAL_BLUR = 0.5
+export const FRACTAL_BLUR = 0
 
 /** Escape-loop ceiling. Raise it if deep zoom looks mushy rather than blurry. */
 export const FRACTAL_MAX_ITER = 256
@@ -106,13 +106,13 @@ export const FRACTAL_PULSE_DRIFT = 0.65
 export const FRACTAL_SPIN = 1
 
 /** Peak opacity. 1 = solid. */
-export const MATRIX_ALPHA = 0.75
+export const MATRIX_ALPHA = 0.8
 
 /** Glyph scroll. 2 = twice as fast. */
 export const MATRIX_SPEED = 1.5
 
 /** Trail hold. 1 = short wipe; higher = longer streaks + persistence. */
-export const MATRIX_TRAIL = 2.5
+export const MATRIX_TRAIL = 1.2
 
 /** Fade-in/out in Z. 0 = hard cut. */
 export const MATRIX_Z_FADE = 0.08
@@ -126,11 +126,28 @@ export const MATRIX_HUE_SPAN = 1
 /** Desktop glyph-row density. 1 = same as mobile; 2 = twice as many rows. */
 export const MATRIX_DENSITY_DESKTOP = 4
 
-/** Peak opacity. 1 = solid. */
-export const NEBULA_ALPHA = 0.8
+/** Soft cloud wash behind the glyphs. 0 = off. */
+export const MATRIX_CLOUD_ALPHA = 0.25
 
+/** Cloud drift. 0 = still. */
+export const MATRIX_CLOUD_SPEED = 0.5
+
+/**
+ * Hue offset from SC_2, in turns. Grid is PRIMARIO, glyphs are SC_1, so the
+ * clouds sit on the leftover voice unless you shift them.
+ */
+export const MATRIX_CLOUD_HUE = 0
+
+/** Peak opacity. 1 = solid. */
+export const NEBULA_ALPHA = 0.75
 /** CCW turns across the nebula window. Negative = clockwise. */
 export const NEBULA_SPIN = 0.4
+
+/**
+ * Desktop spin vs mobile. The pole is the left edge, so the same 0.4 turn
+ * that reads as a drift on a phone throws the photo off a 16:9 frame.
+ */
+export const NEBULA_SPIN_DESKTOP = 0.25
 
 /** Spin pole, viewport X. 0 = left edge. Negative = off-screen. */
 export const NEBULA_PIVOT_X = 0
@@ -142,7 +159,7 @@ export const NEBULA_PIVOT_Y = 0.5
 export const NEBULA_RADIUS = 1
 
 /** Photo zoom. 1 = covers the Z-panel. */
-export const NEBULA_ZOOM = 1.5
+export const NEBULA_ZOOM = 1
 
 /** Fade-in/out in Z. 0 = hard cut. Capped at half the window. */
 export const NEBULA_Z_FADE = 0.05
@@ -156,17 +173,23 @@ export const NEBULA_SOFT_EDGE = 0.45
 /** Hue walk of SC_1 on field stars, in turns. */
 export const NEBULA_HUE_SPAN = 1
 
+/** Same grid-glow wash as the matrix clouds. 0 = off. */
+export const NEBULA_CLOUD_ALPHA = 0.3
+
 /** Field stars. 0 = nebula only. */
-export const NEBULA_STAR_COUNT = 180
+export const NEBULA_STAR_COUNT = 200
+
+/** Desktop count vs mobile. 1 = same; 2 = twice as many. */
+export const NEBULA_STAR_COUNT_DESKTOP = 5
 
 /** Desktop star size vs mobile. 1 = same; 0.2 = five times smaller. */
-export const NEBULA_STAR_SCALE_DESKTOP = 0.5
+export const NEBULA_STAR_SCALE_DESKTOP = 0.3
 
 /** Twinkle speed. 2 = twice as fast. */
 export const NEBULA_TWINKLE = 1
 
 /** Page length in viewports: SECTIONS.length / this. Grid and camera follow. */
-export const SCROLL_SPEED = 1 / 2
+export const SCROLL_SPEED = 0.6
 
 /** Cards fly in/out within CARD_Z. 0 = cut (no travel). */
 export const SCROLL_STICK = 1
@@ -219,13 +242,20 @@ export function applyDebugVars(): void {
   root.setProperty('--shine-from', `${(-band / (1 - band)) * 100}%`)
   root.setProperty('--shine-to', `${(1 / (1 - band)) * 100}%`)
   root.setProperty('--pic-feather', `${Math.min(49, Math.max(0, PIC_FEATHER))}%`)
+  root.setProperty(
+    '--nebula-edge',
+    `${Math.min(49, Math.max(0, NEBULA_EDGE_FADE) * 100)}%`,
+  )
 }
 
 /** Energy orbs running along the grid lines, in SC_1 and SC_2. 0 = off. */
 export const ORB_COUNT = 48
 
-/** World units per second. */
+/** World units per second on the major lines. */
 export const ORB_SPEED = 7
+
+/** Fraction of ORB_SPEED on the thin lines. 1 = same pace. */
+export const ORB_MINOR_SPEED = 0.4
 
 /** Random spread around that speed. 0 = every orb runs at the same pace. */
 export const ORB_SPEED_JITTER = 0.55
@@ -239,11 +269,14 @@ export const ORB_SPAN = 48
 /** Chance of turning 90 degrees at each intersection. 0 = dead straight. */
 export const ORB_TURN = 0.2
 
+/** How long a grid click steers every orb toward that cell. */
+export const ORB_SEEK_TIME = 0.55
+
 /** Floor-line spread. 0.5 = tighter, 2 = wider glow. */
 export const GRID_GLOW = 1
 
 /** Fade-in/out in Z. 0 = hard cut. Capped at half the window. */
-export const GRID_Z_FADE = 0.03
+export const GRID_Z_FADE = 0.05
 
 /** Card background opacity. Blur stays even at 0. */
 export const PANEL_ALPHA = 0.8

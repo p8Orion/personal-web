@@ -21,6 +21,7 @@
   --shine-from: -212.5%;
   --shine-to: 312.5%;
   --pic-feather: 8%;
+  --nebula-edge: 16%;
 }
 
 *,
@@ -119,14 +120,13 @@ ul {
 }
 
 .scanlines {
-  opacity: 0.28;
+  opacity: 0.22;
   background: repeating-linear-gradient(
     to bottom,
     transparent 0,
     transparent 2px,
     rgba(0, 0, 0, 0.22) 3px
   );
-  mix-blend-mode: multiply;
 }
 
 .vignette {
@@ -136,7 +136,7 @@ ul {
 
 @media (prefers-reduced-motion: no-preference) {
   .scanlines {
-    animation: hud-flicker 9s steps(2, end) infinite;
+    animation: none;
   }
 }
 
@@ -414,7 +414,6 @@ ul {
   width: min(36rem, 100%);
   pointer-events: none;
   overflow-anchor: none;
-  will-change: transform, opacity;
 }
 
 .document__card .panel {
@@ -426,7 +425,6 @@ ul {
   padding: 1.35rem 1.4rem 1.45rem;
   background: var(--panel);
   border: 1px solid var(--line);
-  backdrop-filter: blur(10px);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--phosphor) 6%, transparent);
 }
 
@@ -627,6 +625,97 @@ ul {
   height: 100%;
   display: block;
   pointer-events: none;
+}
+
+.stage__matrix-clouds,
+.stage__matrix-rain,
+.stage__nebula-clouds {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+}
+
+.stage__nebula {
+  --nebula-pivot-x: 0px;
+  --nebula-pivot-y: 50%;
+  --nebula-orbit-x: 100vw;
+  --nebula-orbit-y: 0px;
+  --nebula-size: calc(max(100vw, 100vh) * 1);
+  --nebula-angle: 0deg;
+  --nebula-soft-inner: 53.9%;
+  overflow: hidden;
+  -webkit-mask-image:
+    linear-gradient(
+      to right,
+      transparent 0,
+      #000 var(--nebula-edge),
+      #000 calc(100% - var(--nebula-edge)),
+      transparent 100%
+    ),
+    linear-gradient(
+      to bottom,
+      transparent 0,
+      #000 var(--nebula-edge),
+      #000 calc(100% - var(--nebula-edge)),
+      transparent 100%
+    );
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(
+      to right,
+      transparent 0,
+      #000 var(--nebula-edge),
+      #000 calc(100% - var(--nebula-edge)),
+      transparent 100%
+    ),
+    linear-gradient(
+      to bottom,
+      transparent 0,
+      #000 var(--nebula-edge),
+      #000 calc(100% - var(--nebula-edge)),
+      transparent 100%
+    );
+  mask-composite: intersect;
+}
+
+.stage__nebula-spin {
+  position: absolute;
+  inset: 0;
+  transform-origin: var(--nebula-pivot-x) var(--nebula-pivot-y);
+  transform: rotate(var(--nebula-angle));
+  will-change: transform;
+}
+
+.stage__nebula-photo {
+  position: absolute;
+  left: calc(var(--nebula-pivot-x) + var(--nebula-orbit-x) - var(--nebula-size) / 2);
+  top: calc(var(--nebula-pivot-y) + var(--nebula-orbit-y) - var(--nebula-size) / 2);
+  width: var(--nebula-size);
+  height: var(--nebula-size);
+  object-fit: cover;
+  -webkit-mask-image: radial-gradient(
+    circle closest-side,
+    #000 0,
+    #000 var(--nebula-soft-inner),
+    transparent 100%
+  );
+  mask-image: radial-gradient(
+    circle closest-side,
+    #000 0,
+    #000 var(--nebula-soft-inner),
+    transparent 100%
+  );
+}
+
+.stage__nebula-stars {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .stage__viewport {
@@ -1045,6 +1134,17 @@ a.contact-row:focus-visible {
     bottom: 50%;
     left: 0;
     right: 0;
+  }
+
+  .stage__nebula {
+    -webkit-mask-image: linear-gradient(
+      to top,
+      transparent 0,
+      #000 var(--nebula-edge)
+    );
+    mask-image: linear-gradient(to top, transparent 0, #000 var(--nebula-edge));
+    -webkit-mask-composite: source-in;
+    mask-composite: intersect;
   }
 
   .stage__slot {

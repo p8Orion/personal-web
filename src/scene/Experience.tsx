@@ -1,3 +1,4 @@
+import { AdaptiveDpr } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import { useEffect, useState } from 'react'
 import { detectWebGL, usePerfTier } from '../hooks/usePerfTier.ts'
@@ -41,6 +42,7 @@ export function Experience() {
           powerPreference: 'high-performance',
           stencil: false,
         }}
+        performance={{ min: 0.5, max: 1, debounce: 200 }}
         onCreated={({ gl }) => {
           // Transparent sky so the Z-panel can sit behind the grid on mobile.
           // Body background paints the same COLORS.bg underneath.
@@ -57,6 +59,7 @@ export function Experience() {
           position={[0, 12, 0]}
         />
         <directionalLight color="#d7ffe9" intensity={0.45} position={[8, 14, 4]} />
+        <AdaptiveDpr />
         <CameraRig reducedMotion={reducedMotion} />
         <World skipFx={tier.skipFx || reducedMotion} />
       </Canvas>

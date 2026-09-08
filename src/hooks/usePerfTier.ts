@@ -22,7 +22,8 @@ function detectTier(): PerfTier {
   return {
     isMobile,
     skipFx,
-    dpr: skipFx ? 1 : [1, 2],
+    // 2x pixels is 4x 3D fill-rate. Overlays have their own caps.
+    dpr: skipFx ? 1 : [1, 1.5],
   }
 }
 

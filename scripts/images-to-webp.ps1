@@ -30,7 +30,12 @@ if (-not $ffmpeg) {
 }
 if (-not $ffmpeg) { throw 'ffmpeg not found. winget install Gyan.FFmpeg' }
 
-$originals = Get-ChildItem $Source -File | Where-Object { $_.Extension -match '^\.(jpg|jpeg|png)$' } | Sort-Object BaseName
+# OrionNebula is a fullscreen overlay, not a 512px card. Capping it at MaxWidth
+# (and serving the result through a 1920 canvas) is what made desktop look
+# low-res. The nebula reads the jpg directly; leave it out of this pass.
+$originals = Get-ChildItem $Source -File | Where-Object {
+  $_.Extension -match '^\.(jpg|jpeg|png)$' -and $_.BaseName -ne 'OrionNebula'
+} | Sort-Object BaseName
 if (-not $originals) { throw "No jpg/png originals under $Source" }
 
 $stage = Join-Path ([IO.Path]::GetTempPath()) "webp-$(Get-Random)"

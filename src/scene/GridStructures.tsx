@@ -1,7 +1,7 @@
 import { shaderMaterial } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
-import { useEffect, useMemo } from 'react'
-import { BoxGeometry, Color, ShaderMaterial, Vector3 } from 'three'
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react'
+import { BoxGeometry, Color, InstancedMesh, Object3D, ShaderMaterial, Vector3 } from 'three'
 import {
   CITY_BASE_BIAS,
   CITY_HEIGHT_BIAS,
@@ -168,6 +168,7 @@ function buildStructures(): Structure[] {
 
 const STRUCTURES = buildStructures()
 const UNIT_BOX = new BoxGeometry(1, 1, 1)
+const INSTANCE = new Object3D()
 
 const EDGE_VERT = /* glsl */ `
   varying vec3 vWorldPos;
@@ -175,14 +176,19 @@ const EDGE_VERT = /* glsl */ `
   varying vec3 vHalfSize;
 
   void main() {
+#ifdef USE_INSTANCING
+    mat4 local = instanceMatrix;
+#else
+    mat4 local = mat4(1.0);
+#endif
     vec3 scale = vec3(
-      length(vec3(modelMatrix[0][0], modelMatrix[0][1], modelMatrix[0][2])),
-      length(vec3(modelMatrix[1][0], modelMatrix[1][1], modelMatrix[1][2])),
-      length(vec3(modelMatrix[2][0], modelMatrix[2][1], modelMatrix[2][2]))
+      length(local[0].xyz),
+      length(local[1].xyz),
+      length(local[2].xyz)
     );
     vHalfSize = scale * 0.5;
     vLocalPos = position * scale;
-    vec4 world = modelMatrix * vec4(position, 1.0);
+    vec4 world = modelMatrix * local * vec4(position, 1.0);
     vWorldPos = world.xyz;
     gl_Position = projectionMatrix * viewMatrix * world;
   }
@@ -218,9 +224,10 @@ const EDGE_FRAG = /* glsl */ `
     float fade = gridMajorFade(vWorldPos, uCamPos, uFadeStart, uFadeEnd);
     // Two curves off one fade. The edges dim with distance, but the box stays
     // opaque well past that so it keeps occluding the Z-panel behind it, and
-    // only dissolves in the last stretch before the horizon.
-    vec3 lit = mix(uFill, uPRIMARIO, grid * fade);
-    gl_FragColor = vec4(lit, gridSolid(fade) * uZFade);
+    // only dissolves in the last stretch before the horizon. uZFade is only
+    // the phosphor: multiplying the alpha would open holes for nebula stars.
+    vec3 lit = mix(uFill, uPRIMARIO, grid * fade * uZFade);
+    gl_FragColor = vec4(lit, gridSolid(fade));
   }
 `
 
@@ -251,6 +258,7 @@ type EdgeMaterialInstance = ShaderMaterial & {
 }
 
 export function GridStructures({ skipFx }: { skipFx: boolean }) {
+  const meshRef = useRef<InstancedMesh>(null)
   const material = useMemo(() => {
     const mat = new EdgeMaterial() as EdgeMaterialInstance
     mat.toneMapped = false
@@ -272,6 +280,20 @@ export function GridStructures({ skipFx }: { skipFx: boolean }) {
     material.uFadeEnd = fade.end
   }, [material, skipFx])
 
+  useLayoutEffect(() => {
+    const mesh = meshRef.current
+    if (!mesh) return
+    for (let i = 0; i < STRUCTURES.length; i += 1) {
+      const item = STRUCTURES[i]
+      INSTANCE.position.copy(item.rest)
+      INSTANCE.scale.set(item.size[0], item.size[1], item.size[2])
+      INSTANCE.updateMatrix()
+      mesh.setMatrixAt(i, INSTANCE.matrix)
+    }
+    mesh.instanceMatrix.needsUpdate = true
+    mesh.computeBoundingSphere()
+  }, [])
+
   useFrame(({ camera }) => {
     const scroll = getSmoothedScrollProgress()
     material.uCamPos.copy(camera.position)
@@ -280,17 +302,13 @@ export function GridStructures({ skipFx }: { skipFx: boolean }) {
     material.uPRIMARIO.setHSL(paletteHues(scroll).PRIMARIO, 0.78, 0.52)
   })
 
+  if (STRUCTURES.length === 0) return null
+
   return (
-    <group>
-      {STRUCTURES.map((item, index) => (
-        <mesh
-          geometry={UNIT_BOX}
-          key={index}
-          material={material}
-          position={[item.rest.x, item.rest.y, item.rest.z]}
-          scale={item.size}
-        />
-      ))}
-    </group>
+    <instancedMesh
+      args={[UNIT_BOX, material, STRUCTURES.length]}
+      frustumCulled={false}
+      ref={meshRef}
+    />
   )
 }

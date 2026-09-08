@@ -324,63 +324,61 @@ function paint(
 
 export function MandelbrotField({ z }: { z: number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const glRef = useRef<GLState | null>(null)
   const zRef = useRef(z)
   zRef.current = z
   const fade = fractalWindowFade(z)
+  const onStage = fade > 0.001
   const reducedMotion = useReducedMotion()
 
+  // One loop for scroll, pulse, and resize. Painting from both a z-effect and
+  // a pulse rAF was drawing the escape set twice whenever the page moved.
   useEffect(() => {
+    if (!onStage) return
     const canvas = canvasRef.current
     if (!canvas) return
     const state = createGL(canvas)
-    glRef.current = state
-    const redraw = () => {
-      if (!state) return
-      paint(canvas, state, zRef.current)
-    }
-    const ro = new ResizeObserver(redraw)
-    ro.observe(canvas)
-    const mq = window.matchMedia('(max-width: 768px)')
-    mq.addEventListener('change', redraw)
-    redraw()
-    return () => {
-      ro.disconnect()
-      mq.removeEventListener('change', redraw)
-      if (state) {
-        state.gl.deleteBuffer(state.vbo)
-        state.gl.deleteProgram(state.program)
-      }
-      glRef.current = null
-    }
-  }, [])
+    if (!state) return
 
-  useEffect(() => {
-    const canvas = canvasRef.current
-    const state = glRef.current
-    if (!canvas || !state) return
-    paint(canvas, state, z)
-  }, [z])
-
-  // Scroll alone never repaints while the page is still, so the pulse needs its
-  // own loop. Only while the fractal is on stage.
-  useEffect(() => {
-    if (fade <= 0.001 || reducedMotion || FRACTAL_PULSE <= 0) return
-    const canvas = canvasRef.current
-    const state = glRef.current
-    if (!canvas || !state) return
-    const gap = 1000 / PULSE_FPS
+    let dirty = true
+    let lastZ = Number.NaN
+    let lastPaint = 0
     let frame = 0
-    let last = 0
+    const gap = 1000 / PULSE_FPS
+
+    const mark = () => {
+      dirty = true
+    }
     const loop = (now: number) => {
       frame = requestAnimationFrame(loop)
-      if (now - last < gap) return
-      last = now
-      paint(canvas, state, zRef.current, now)
+      if (document.visibilityState !== 'visible') return
+      const zNow = zRef.current
+      if (fractalWindowFade(zNow) <= 0.001) return
+      const zChanged = Number.isNaN(lastZ) || Math.abs(zNow - lastZ) > 1e-5
+      const pulseDue =
+        !reducedMotion && FRACTAL_PULSE > 0 && now - lastPaint >= gap
+      if (!dirty && !zChanged && !pulseDue) return
+      if (!dirty && now - lastPaint < gap) return
+      dirty = false
+      lastZ = zNow
+      lastPaint = now
+      paint(canvas, state, zNow, now)
     }
+
+    const ro = new ResizeObserver(mark)
+    ro.observe(canvas)
+    const mq = window.matchMedia('(max-width: 768px)')
+    mq.addEventListener('change', mark)
     frame = requestAnimationFrame(loop)
-    return () => cancelAnimationFrame(frame)
-  }, [fade > 0.001, reducedMotion])
+    return () => {
+      ro.disconnect()
+      mq.removeEventListener('change', mark)
+      cancelAnimationFrame(frame)
+      state.gl.deleteBuffer(state.vbo)
+      state.gl.deleteProgram(state.program)
+    }
+  }, [onStage, reducedMotion])
+
+  if (!onStage) return null
 
   return (
     <canvas

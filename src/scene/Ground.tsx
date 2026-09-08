@@ -5,7 +5,7 @@ import { Color, DoubleSide, ShaderMaterial, Vector3 } from 'three'
 import { GRID_GLOW, GRID_Z_END, GRID_Z_FADE, GRID_Z_START } from '../content/debug.ts'
 import { zWindowFade } from '../content/zMap.ts'
 import { getSmoothedScrollProgress } from '../hooks/useScrollProgress.ts'
-import { gridYaw, setFloorPivotAtScreenBottom } from './gridTransform.ts'
+import { gridSpacing, gridYaw, setFloorPivotAtScreenBottom } from './gridTransform.ts'
 import { GRID_GLOW_LINE_GLSL } from './gridGlow.ts'
 import { fadeRange, HORIZON_FADE_GLSL } from './horizonFade.ts'
 import { COLORS, paletteHues } from './materials.ts'
@@ -60,8 +60,10 @@ const GRID_FRAG = /* glsl */ `
     // stacked on top of it as extra alpha.
     float solid = gridSolid(majorFade);
     vec3 base = mix(uFill, uPRIMARIO, 0.04 * majorFade);
-    vec3 lit = mix(base, uPRIMARIO, grid);
-    gl_FragColor = vec4(lit, max(grid, solid) * uZFade);
+    // uZFade kills the phosphor lines. Solid stays: otherwise the floor
+    // goes transparent and the nebula stars punch through the ground.
+    vec3 lit = mix(base, uPRIMARIO, grid * uZFade);
+    gl_FragColor = vec4(lit, max(grid * uZFade, solid));
   }
 `
 
@@ -115,8 +117,9 @@ export function Ground({ skipFx }: { skipFx: boolean }) {
 
   useEffect(() => {
     const fade = fadeRange(skipFx)
-    material.uCell = skipFx ? 0.27 : 0.2
-    material.uMajor = skipFx ? 1.35 : 1
+    const { cell, major } = gridSpacing(skipFx)
+    material.uCell = cell
+    material.uMajor = major
     material.uFadeStart = fade.start
     material.uFadeEnd = fade.end
   }, [material, skipFx])
