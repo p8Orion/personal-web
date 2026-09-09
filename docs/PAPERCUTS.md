@@ -2,6 +2,22 @@
 
 Trampas no obvias y soluciones reutilizables de este repo. Más recientes primero. Sin secretos.
 
+## 2026-09-09 — en PowerShell `git log HEAD..origin/main` sale vacío aunque el remoto adelantó
+
+- **Síntoma:** `git fetch` muestra `5b6745d..6dfd219 main -> origin/main`, pero `git log --oneline HEAD..origin/main` no imprime nada (exit 0). `git status` después del fetch sí dice *behind by 1 commit*.
+- **Contexto:** PowerShell 5.x en Windows. Cualquier comando git con `A..B` (log, diff, rev-list).
+- **Causa:** `..` es el operador de rango de PowerShell. Sin comillas reescribe el argumento y git recibe otra cosa (o nada útil), no el rango de commits. No es que origin/main y HEAD coincidan.
+- **Solución:** citar el rango: `git log --oneline "HEAD..origin/main"`. Lo mismo para `git diff`. Alternativa: `git log --oneline HEAD origin/main` no es equivalente; para "qué va a entrar" usá `git log --oneline origin/main -N` o `git show --stat origin/main`.
+- **No reintentar:** volver a fetch, ni asumir que el working tree dirty tapó el log. El fetch ya había actualizado `origin/main`.
+
+## 2026-09-04 — flash celeste a pantalla completa al cerrar el lightbox en mobile
+
+- **Síntoma:** en mobile (real y con el Device Toolbar de DevTools), al salir de una imagen ampliada tocando la pantalla, toda la pantalla destella celeste un frame. Saliendo por scroll no pasa nunca.
+- **Contexto:** `.pic-modal` en `src/styles.css`, que es el `div` de dismiss del lightbox: `position: fixed; inset: 0` con un `onClick` en `PicModal`.
+- **Causa:** el tap highlight por defecto de Blink. Alcanza con que un elemento tenga handler de click para que Chrome le pinte encima su overlay celeste al tocarlo, y el overlay cubre **toda la caja del elemento tocado**, que acá es el viewport entero. Las tres pistas que parecen apuntar a otra cosa en realidad confirman esta: solo en mobile porque el highlight es de touch; solo al tocar y no al scrollear porque hace falta un tap; y "solo en DevTools" porque el Device Toolbar emula touch. Nada de esto tiene que ver con la animación.
+- **Solución:** `-webkit-tap-highlight-color: transparent` en la superficie de dismiss. Puesto en `.pic-modal` y en `.overlay__backdrop`, que es el otro botón a pantalla completa. Si algún día molesta en toda la app, el global es `html { -webkit-tap-highlight-color: transparent; }`, pero ojo que eso le saca el feedback de tap a los botones reales.
+- **No reintentar:** buscarlo en las Web Animations del zoom, en `will-change`, en el `-webkit-mask-image` de `.pic-modal__img` o en promoción de capas del compositor. Ya se fue por ese camino una vez y el flash siguió. Un destello de un color que no está en la paleta del proyecto es señal de que lo pinta el browser, no el CSS propio.
+
 ## 2026-09-04 — `npx tsc --noEmit` en este repo no chequea NADA y sale 0
 
 - **Síntoma:** `npx tsc --noEmit` sale con código 0 y da a entender que el proyecto tipa bien. En realidad `npm run build` estaba roto hacía rato, con tres errores (`01-about.en.ts` sin `text`, y dos en `SectionCopy.tsx`).

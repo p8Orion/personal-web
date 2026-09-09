@@ -37,19 +37,24 @@ function boxOf(el: Element): Box {
 }
 
 function measureOpen(shot: HTMLButtonElement, src: string): PicOpen {
-  const img = shot.querySelector('img')
-  const origin = boxOf(img ?? shot)
+  // The button, not the image inside it: both ends of the zoom now carry the same 3px
+  // frame, so mapping outer box to outer box keeps the borders on top of each other.
+  const origin = boxOf(shot)
+  const panel = shot.closest('.panel')
+  const card = panel ? boxOf(panel) : origin
   // clientWidth/Height, not innerWidth/Height: same box a fixed element is laid out in,
   // which on mobile is what the URL bar shifts around.
   const root = document.documentElement
   const mobile = root.clientWidth <= 768
-  const size = mobile
-    ? Math.min(root.clientWidth - 12, Math.max(160, root.clientHeight - 48))
-    : Math.min(root.clientWidth - 48, root.clientHeight * 0.5)
+  // Mobile cards sit inside a narrow gutter, so the photo borrows it back.
+  const avail = mobile ? root.clientWidth - 12 : card.width
+  const size = Math.min(avail, Math.max(160, root.clientHeight - 48))
   return {
     src,
     origin,
-    left: (root.clientWidth - size) / 2,
+    left: mobile
+      ? (root.clientWidth - size) / 2
+      : card.left + (card.width - size) / 2,
     size,
   }
 }
@@ -65,7 +70,9 @@ function invertTransform(origin: Box, dest: Box): string {
 const PIC_OPEN_MS = Math.max(0, PIC_OPEN_TIME) * 1000
 const PIC_EXIT_MS = Math.max(0, PIC_EXIT_TIME) * 1000
 const PIC_EASE_OPEN = 'cubic-bezier(0.22, 1, 0.36, 1)'
-const PIC_EASE_EXIT = 'cubic-bezier(0.4, 0, 0.7, 0.3)'
+// Has to move on the first frame after the tap. A steeper ease-in reads as lag no matter
+// how short the duration is, because a dismissal is judged on how fast it answers.
+const PIC_EASE_EXIT = 'cubic-bezier(0.4, 0, 0.2, 1)'
 
 /**
  * Web Animations rather than a CSS transition: the frame mounts already at its final

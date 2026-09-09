@@ -25,8 +25,8 @@ export const CITY_BASE_BIAS = 2.2
 export const GRID_Z_START = 0
 export const GRID_Z_END = 1
 
-export const FRACTAL_Z_START = 0.08
-export const FRACTAL_Z_END = 0.5
+export const FRACTAL_Z_START = 0.025
+export const FRACTAL_Z_END = 0.45
 
 export const MATRIX_Z_START = 0.4
 export const MATRIX_Z_END = 0.8
@@ -82,10 +82,10 @@ export const FRACTAL_MAX_EDGE = 2560
  * Samples per pixel per axis. 2 = 4 samples. Kills the speckle where the escape
  * bands get thinner than a pixel. Costs its own square: 2 is 4x the shader work.
  */
-export const FRACTAL_SUPERSAMPLE = 1
+export const FRACTAL_SUPERSAMPLE = 2
 
 /** Softening blur over the fractal, in CSS pixels. 0 = off. */
-export const FRACTAL_BLUR = 0
+export const FRACTAL_BLUR = 0.5
 
 /** Escape-loop ceiling. Raise it if deep zoom looks mushy rather than blurry. */
 export const FRACTAL_MAX_ITER = 256
@@ -106,13 +106,13 @@ export const FRACTAL_PULSE_DRIFT = 0.65
 export const FRACTAL_SPIN = 1
 
 /** Peak opacity. 1 = solid. */
-export const MATRIX_ALPHA = 0.8
+export const MATRIX_ALPHA = 0.75
 
 /** Glyph scroll. 2 = twice as fast. */
 export const MATRIX_SPEED = 1.5
 
 /** Trail hold. 1 = short wipe; higher = longer streaks + persistence. */
-export const MATRIX_TRAIL = 1.2
+export const MATRIX_TRAIL = 2.5
 
 /** Fade-in/out in Z. 0 = hard cut. */
 export const MATRIX_Z_FADE = 0.08
@@ -124,7 +124,7 @@ export const MATRIX_EDGE_FADE = 0.16
 export const MATRIX_HUE_SPAN = 1
 
 /** Desktop glyph-row density. 1 = same as mobile; 2 = twice as many rows. */
-export const MATRIX_DENSITY_DESKTOP = 4
+export const MATRIX_DENSITY_DESKTOP = 3
 
 /** Soft cloud wash behind the glyphs. 0 = off. */
 export const MATRIX_CLOUD_ALPHA = 0.25
@@ -139,7 +139,7 @@ export const MATRIX_CLOUD_SPEED = 0.5
 export const MATRIX_CLOUD_HUE = 0
 
 /** Peak opacity. 1 = solid. */
-export const NEBULA_ALPHA = 0.75
+export const NEBULA_ALPHA = 0.8
 /** CCW turns across the nebula window. Negative = clockwise. */
 export const NEBULA_SPIN = 0.4
 
@@ -159,7 +159,7 @@ export const NEBULA_PIVOT_Y = 0.5
 export const NEBULA_RADIUS = 1
 
 /** Photo zoom. 1 = covers the Z-panel. */
-export const NEBULA_ZOOM = 1
+export const NEBULA_ZOOM = 1.2
 
 /** Fade-in/out in Z. 0 = hard cut. Capped at half the window. */
 export const NEBULA_Z_FADE = 0.05
@@ -177,7 +177,7 @@ export const NEBULA_HUE_SPAN = 1
 export const NEBULA_CLOUD_ALPHA = 0.3
 
 /** Field stars. 0 = nebula only. */
-export const NEBULA_STAR_COUNT = 200
+export const NEBULA_STAR_COUNT = 180
 
 /** Desktop count vs mobile. 1 = same; 2 = twice as many. */
 export const NEBULA_STAR_COUNT_DESKTOP = 5
@@ -189,7 +189,7 @@ export const NEBULA_STAR_SCALE_DESKTOP = 0.3
 export const NEBULA_TWINKLE = 1
 
 /** Page length in viewports: SECTIONS.length / this. Grid and camera follow. */
-export const SCROLL_SPEED = 0.6
+export const SCROLL_SPEED = 1 / 2
 
 /** Cards fly in/out within CARD_Z. 0 = cut (no travel). */
 export const SCROLL_STICK = 1
@@ -218,14 +218,11 @@ export const SHINE_STRENGTH = 0.95
 /** Sweeps per card. Each costs another SHINE_DURATION. */
 export const SHINE_REPEATS = 2
 
-/** Photo modal edge fade, % of its size. 0 = hard square; higher = rounder + softer. */
-export const PIC_FEATHER = 8
-
 /** Zoom from the thumbnail to the modal, seconds. */
 export const PIC_OPEN_TIME = 0.5
 
-/** Zoom back on close, seconds. */
-export const PIC_EXIT_TIME = 0.5
+/** Zoom back on close, seconds. Shorter than the open: a dismissal should feel answered. */
+export const PIC_EXIT_TIME = 0.3
 
 export function applyDebugVars(): void {
   const root = document.documentElement.style
@@ -241,7 +238,6 @@ export function applyDebugVars(): void {
   root.setProperty('--shine-band', `${band * 100}%`)
   root.setProperty('--shine-from', `${(-band / (1 - band)) * 100}%`)
   root.setProperty('--shine-to', `${(1 / (1 - band)) * 100}%`)
-  root.setProperty('--pic-feather', `${Math.min(49, Math.max(0, PIC_FEATHER))}%`)
   root.setProperty(
     '--nebula-edge',
     `${Math.min(49, Math.max(0, NEBULA_EDGE_FADE) * 100)}%`,
@@ -276,7 +272,7 @@ export const ORB_SEEK_TIME = 0.55
 export const GRID_GLOW = 1
 
 /** Fade-in/out in Z. 0 = hard cut. Capped at half the window. */
-export const GRID_Z_FADE = 0.05
+export const GRID_Z_FADE = 0.03
 
 /** Card background opacity. Blur stays even at 0. */
 export const PANEL_ALPHA = 0.8
